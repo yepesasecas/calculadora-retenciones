@@ -1,6 +1,6 @@
 import { CONCEPTOS } from "./datos/conceptos.js";
 import { MUNICIPIOS } from "./datos/municipios.js";
-import { RESPONSABILIDADES, COD, esRelevante } from "./datos/responsabilidades.js";
+import { COD, esRelevante } from "./datos/responsabilidades.js";
 import { deriveProfile } from "./dominio/perfil.js";
 import { RETEIVA_TARIFA } from "./dominio/tramo.js";
 import { calcularCadena } from "./dominio/cadena.js";
@@ -49,51 +49,39 @@ MUNICIPIOS.forEach(m => $("muni").add(new Option(m.nombre, m.id)));
 $("icaTarifa").value = MUNICIPIOS[0].tarifaPorMil;
 
 // ---- Entradas de responsabilidades del RUT ----
-const RELEVANTES = RESPONSABILIDADES.filter(r => esRelevante(r.code));
-const IGNORADAS  = RESPONSABILIDADES.filter(r => !esRelevante(r.code));
+// Los ocho códigos marcables. Del conjunto "relevante" quedan fuera los
+// obsoletos (11, 12), los que duplican a otro (23 ≡ 09, 53 ≡ 49) y el 04
+// (régimen especial), que aporta el mismo hecho `declarante` que el 05.
+// El motor los sigue entendiendo si llegan por otra vía; sólo no se marcan.
+const CHIPS = ["05", "07", "09", "13", "15", "47", "48", "49"]
+  .map(c => COD[c]).filter(r => r && esRelevante(r.code));
 
-function codeRow(party, r, removable) {
+function chip(party, r, checked) {
   const id = `${party}_${r.code}`;
-  const div = document.createElement("div");
-  div.className = "codeChk" + (removable ? " inert" : "");
-  div.innerHTML =
-    `<input type="checkbox" id="${id}" data-code="${r.code}"${removable ? " checked" : ""}>` +
-    `<span class="code">${r.code}</span>` +
-    `<label for="${id}" style="margin:0;flex:1;color:inherit">${r.nombre}</label>` +
-    (removable ? `<span class="rm" data-rm="${r.code}" data-party="${party}">quitar ×</span>` : "");
-  return div;
+  const span = document.createElement("span");
+  span.innerHTML =
+    `<input type="checkbox" id="${id}" data-code="${r.code}"${checked ? " checked" : ""}>` +
+    `<label for="${id}" title="${r.code} — ${r.nombre}" aria-label="${r.code} — ${r.nombre}">${r.code}</label>`;
+  return span;
 }
 
 function initParty(party, defaults) {
   const rel = $(`${party}Relevant`);
-  RELEVANTES.forEach(r => {
-    const row = codeRow(party, r, false);
-    if (defaults.includes(r.code)) row.querySelector("input").checked = true;
-    rel.appendChild(row);
-  });
-  const sel = $(`${party}AddOtra`);
-  sel.add(new Option("Agregar responsabilidad…", ""));
-  IGNORADAS.forEach(r => sel.add(new Option(`${r.code} — ${r.nombre}`, r.code)));
-  defaults.filter(c => !esRelevante(c)).forEach(c => addOtra(party, c));
-}
-
-function addOtra(party, code) {
-  const cont = $(`${party}Otras`);
-  if (cont.querySelector(`[data-code="${code}"]`)) return;
-  const r = COD[code]; if (!r) return;
-  cont.appendChild(codeRow(party, r, true));
+  CHIPS.forEach(r => rel.appendChild(chip(party, r, defaults.includes(r.code))));
 }
 
 function readCodes(party) {
-  return [...document.querySelectorAll(`#${party}Relevant [data-code]:checked, #${party}Otras [data-code]:checked`)]
+  return [...document.querySelectorAll(`#${party}Relevant [data-code]:checked`)]
     .map(el => el.dataset.code);
 }
 
+// El perfil derivado en lenguaje llano: una lista uniforme de hechos, igual
+// para las tres partes (no dice a quién se le retiene — eso lo dicen los tramos).
 const FLAG_LABELS = [
-  ["responsableIVA", "Responsable IVA"], ["declarante", "Declarante"],
-  ["autorretenedor", "Autorretenedor"], ["granContribuyente", "Gran contrib."],
-  ["agenteRetefuente", "Agente retefuente"], ["agenteReteIVA", "Agente reteIVA"],
-  ["simple", "SIMPLE"],
+  ["agenteRetefuente", "retiene renta"], ["agenteReteIVA", "retiene IVA"],
+  ["responsableIVA", "factura con IVA"], ["granContribuyente", "gran contribuyente"],
+  ["declarante", "declarante"], ["autorretenedor", "autorretenedor"],
+  ["simple", "régimen simple"],
 ];
 
 function renderDerived(party, prof) {
@@ -273,17 +261,8 @@ $("muni").addEventListener("change", () => {
   render();
 });
 
-// Añadir una responsabilidad "otra" desde el desplegable.
-["cf", "ag", "pr"].forEach(party => $(`${party}AddOtra`).addEventListener("change", e => {
-  if (e.target.value) { addOtra(party, e.target.value); e.target.value = ""; render(); }
-}));
-
-// Delegación: cambios de checkboxes y clic en "quitar ×".
+// Delegación: cualquier chip de código que cambie reliquida la cadena.
 $("form").addEventListener("change", e => { if (e.target.matches("[data-code]")) render(); });
-$("form").addEventListener("click", e => {
-  const rm = e.target.closest(".rm");
-  if (rm) { rm.closest(".codeChk").remove(); render(); }
-});
 // El toggle % / $ fijo intercambia cuál de los dos controles de margen se ve.
 $("margenModo").addEventListener("change", () => {
   const fijo = $("margenModo").value === "fijo";

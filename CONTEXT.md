@@ -14,6 +14,7 @@ _Avoid_: Buyer, customer, pagador
 
 **Proveedor**:
 The subcontractor the Agencia hires. Retenido on leg 2: the Agencia practices withholdings on it. Its subtotal is **derived**, not entered — see [[Margen]].
+_Avoid_: Proveedor ejecutor (suggests the Agencia merely intermediates — the mandato model that [ADR-0002](./docs/adr/0002-three-party-reventa-chain.md) rejected), Contratista
 
 **Leg**:
 One retenedor→retenido invoice relationship. The chain has two: **leg 1** (Cliente final → Agencia) and **leg 2** (Agencia → Proveedor). The same withholding engine runs on each leg with the roles swapped. Inputs (concepto, municipio) are shared across both legs.
@@ -27,7 +28,7 @@ The Agencia's cut of the contract, entered as a percentage or a fixed peso amoun
 _Avoid_: Comisión (that would imply the mandato model, which this is not — see [ADR-0002](./docs/adr/0002-three-party-reventa-chain.md))
 
 **Fiscal profile**:
-A party's tax attributes, **derived from the RUT's responsabilidades (casilla 53)** — the user enters the numbered codes, the profile is computed from them (see [ADR-0001](./docs/adr/0001-rut-derived-fiscal-profile.md)). Derived facts: `responsable de IVA`, `gran contribuyente`, `autorretenedor`, `declarante`, `agente de retención`, and `simple`. Uses post-2019 vocabulary.
+A party's tax attributes, **derived from the RUT's responsabilidades (casilla 53)** — the user enters the numbered codes, the profile is computed from them (see [ADR-0001](./docs/adr/0001-rut-derived-fiscal-profile.md)). Derived facts: `responsable de IVA`, `gran contribuyente`, `autorretenedor`, `declarante`, `agente de retención`, and `simple`. Uses post-2019 vocabulary. The UI states these in plain Spanish — **retiene renta** (agente de retefuente), **retiene IVA** (agente de reteIVA), **factura con IVA** (responsable de IVA) — as a uniform list of facts per party, never as who-withholds-whom (that is the legs' job to say). `declarante` and `autorretenedor` keep their technical names: no honest short paraphrase exists.
 _Avoid_: Régimen simplificado (= no responsable de IVA), régimen común (= responsable de IVA)
 
 **Agente de retención**:

@@ -30,26 +30,45 @@
     background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
     padding: 18px 20px; flex: 1 1 320px; min-width: 0;
   }
+  /* Tres columnas de ancho desigual: "la plata" tiene las etiquetas más largas
+     de la página y es donde se lee el resultado, así que crece el doble. */
+  .panel.entradas  { flex: 0 1 360px; }
+  .panel.plata     { flex: 2 1 420px; }
+  .panel.proveedor { flex: 1 1 300px; }
   .panel h2 {
     font-size: .82rem; text-transform: uppercase; letter-spacing: .06em;
     color: var(--muted); margin: 0 0 12px; font-weight: 700;
   }
+  /* Secciones 2 y 3 del panel de entradas: mismo título, separadas por línea. */
+  .panel h2.paso { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 20px; }
   fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 14px; padding: 10px 14px 12px; }
   legend { font-weight: 600; font-size: .85rem; padding: 0 6px; }
+  /* La Agencia es la perspectiva central del modelo: su tarjeta va marcada. */
+  fieldset.tu { background: var(--warn-bg); border-color: var(--warn-ink); }
+  fieldset.tu legend .yo {
+    background: var(--ink); color: var(--panel); border-radius: 5px;
+    padding: 1px 6px; font-size: .7rem; letter-spacing: .04em; margin-left: 6px;
+  }
   label { display: block; margin: 8px 0 2px; font-size: .85rem; color: var(--muted); }
   select, input[type=text], input[type=number] {
     width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
     background: var(--bg); color: var(--ink); font-size: .95rem;
   }
-  .chk { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: .9rem; color: var(--ink); }
-  .chk input { width: auto; }
-  .codeGrid { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 2px; }
-  .codeGrid.otras { margin-top: 4px; }
-  .codeChk { display: flex; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--ink); }
-  .codeChk input { width: auto; }
-  .codeChk .code { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 1.6em; }
-  .codeChk.inert { color: var(--muted); }
-  .codeChk .rm { cursor: pointer; color: var(--bad); margin-left: auto; font-size: .8rem; }
+  /* Códigos del RUT como chips: el número es la etiqueta; el nombre DIAN
+     completo viaja en title/aria-label (ver P8 de la sesión de diseño). */
+  .codeGrid { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+  .codeGrid input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .codeGrid label {
+    display: inline-block; margin: 0; cursor: pointer; user-select: none;
+    font-size: .85rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    padding: 5px 11px; border-radius: 7px;
+    border: 1px dashed var(--line); color: var(--muted); background: transparent;
+  }
+  .codeGrid input:checked + label {
+    background: var(--ink); color: var(--panel);
+    border: 1px solid var(--ink); font-weight: 700;
+  }
+  .codeGrid input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
   .derived { font-size: .78rem; color: var(--muted); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
   .derived .on { color: var(--ok); font-weight: 600; }
   .derived .alert { color: var(--warn-ink); background: var(--warn-bg); border-radius: 5px; padding: 3px 7px; margin-top: 4px; }
@@ -99,7 +118,7 @@
   <p class="sub">Cadena de tres partes: el <b>Cliente final</b> te contrata, tú (<b>Matiz</b>) subcontratas al <b>Proveedor</b>. Liquida los dos tramos a la vez — lo que te giran, lo que retienes, lo que giras y tu ganancia. Bases vigentes desde el 1 de julio de 2026.</p>
 
   <form id="form" class="cols" autocomplete="off">
-    <section class="panel">
+    <section class="panel entradas">
       <h2>1 · El trabajo</h2>
       <label for="contrato">Valor del contrato (COP, antes de IVA)</label>
       <input type="text" id="contrato" inputmode="numeric" placeholder="100.000.000">
@@ -121,27 +140,19 @@
       </div>
       <p class="hint">Lo que te quedas del contrato. El subtotal del Proveedor se deriva: contrato − margen.</p>
       <div class="split" id="split"></div>
-    </section>
 
-    <section class="panel">
-      <h2>2 · Las partes</h2>
+      <h2 class="paso">2 · Códigos del RUT</h2>
       <fieldset>
         <legend>Cliente final (te contrata y te retiene)</legend>
         <p class="hint">Responsabilidades del RUT (casilla 53). Sin agente de retefuente (07) no te practica retenciones.</p>
         <div class="codeGrid" id="cfRelevant"></div>
-        <label for="cfAddOtra">Otras responsabilidades (no afectan la retención)</label>
-        <select id="cfAddOtra"></select>
-        <div class="codeGrid otras" id="cfOtras"></div>
         <div class="derived" id="cfDerived"></div>
       </fieldset>
 
-      <fieldset>
-        <legend>Matiz — tú (te retienen y retienes)</legend>
-        <p class="hint">Tu RUT. Define el IVA que facturas al Cliente y si puedes retenerle al Proveedor.</p>
+      <fieldset class="tu">
+        <legend>Matiz — tú <span class="yo">TÚ</span></legend>
+        <p class="hint">Tu RUT. Te retienen y retienes: define el IVA que facturas al Cliente y si puedes retenerle al Proveedor.</p>
         <div class="codeGrid" id="agRelevant"></div>
-        <label for="agAddOtra">Otras responsabilidades (no afectan la retención)</label>
-        <select id="agAddOtra"></select>
-        <div class="codeGrid otras" id="agOtras"></div>
         <div class="derived" id="agDerived"></div>
       </fieldset>
 
@@ -149,36 +160,31 @@
         <legend>Proveedor (lo subcontratas y le retienes)</legend>
         <p class="hint">RUT del proveedor. Régimen simple (47) y no responsable de IVA (49) cambian el tramo 2.</p>
         <div class="codeGrid" id="prRelevant"></div>
-        <label for="prAddOtra">Otras responsabilidades (no afectan la retención)</label>
-        <select id="prAddOtra"></select>
-        <div class="codeGrid otras" id="prOtras"></div>
         <div class="derived" id="prDerived"></div>
       </fieldset>
 
-      <fieldset>
-        <legend>Territorio e IVA</legend>
-        <label for="muni">Municipio (ReteICA)</label>
-        <select id="muni"></select>
-        <label for="icaTarifa">Tarifa ICA (por mil) — según la actividad</label>
-        <input type="number" id="icaTarifa" step="0.01" min="0">
-        <label for="ivaRate">Tarifa de IVA</label>
-        <select id="ivaRate">
-          <option value="0.19" selected>19 % (general)</option>
-          <option value="0.05">5 % (reducida)</option>
-          <option value="0">0 % (exento / excluido)</option>
-        </select>
-      </fieldset>
+      <h2 class="paso">3 · Territorio e IVA</h2>
+      <label for="muni">Municipio (ReteICA)</label>
+      <select id="muni"></select>
+      <label for="icaTarifa">Tarifa ICA (por mil) — según la actividad</label>
+      <input type="number" id="icaTarifa" step="0.01" min="0">
+      <label for="ivaRate">Tarifa de IVA</label>
+      <select id="ivaRate">
+        <option value="0.19" selected>19 % (general)</option>
+        <option value="0.05">5 % (reducida)</option>
+        <option value="0">0 % (exento / excluido)</option>
+      </select>
     </section>
 
-    <section class="panel">
-      <h2>3 · La plata, paso a paso</h2>
+    <section class="panel plata">
+      <h2>La plata, paso a paso</h2>
       <div id="flujo"></div>
       <div id="notes"></div>
       <p class="muted-note">Herramienta de estimación. Tarifas y bases: tabla nacional 2026 (vigencia 1 jul en adelante) y datos municipales de ReteICA. Verifique casos no estándar con su contador(a).</p>
     </section>
 
-    <section class="panel">
-      <h2>4 · Qué debe facturarte el Proveedor</h2>
+    <section class="panel proveedor">
+      <h2>Qué debe facturarte el Proveedor</h2>
       <div id="specProveedor"></div>
     </section>
   </form>
