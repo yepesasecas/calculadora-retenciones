@@ -51,8 +51,16 @@ total) y la factura del Proveedor es tu costo. Ver
 - **Régimen simple (47)**: no sujeto a retefuente ni a ReteICA.
 - **No responsable de IVA (49)**: ese tramo se factura sin IVA.
 
-Cuando una retención no aplica, la herramienta dice **por qué** ("no aplica —
-el retenido está en régimen simple (47)"), en lugar de mostrar un cero mudo.
+Cuando una retención no aplica, no se pinta su fila: la herramienta dice **por
+qué** en el panel de notas ("El retenido pertenece al régimen simple (SIMPLE,
+código 47): no es sujeto de retefuente ni de ReteICA…"). Lo que bloquea el tramo
+entero se enuncia una sola vez, y como el bloqueo es por tramo lo normal es que
+las tres retenciones desaparezcan juntas; una base mínima, en cambio, sólo tumba
+su propia retención y trae su propia nota.
+
+El IVA no es una retención sino una línea de la factura, así que su fila se pinta
+siempre, con su razón cuando queda en cero. Ver
+[ADR-0004](./docs/adr/0004-inapplicable-withholdings-are-hidden.md).
 
 ## Verificación
 

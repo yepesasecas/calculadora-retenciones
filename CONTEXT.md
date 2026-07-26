@@ -13,7 +13,7 @@ The end buyer; the party that contracts and pays the Agencia. Retenedor on leg 1
 _Avoid_: Buyer, customer, pagador
 
 **Proveedor**:
-The subcontractor the Agencia hires. Retenido on leg 2: the Agencia practices withholdings on it. Its subtotal is **derived**, not entered — see [[Margen]].
+The subcontractor the Agencia hires. Retenido on leg 2: the Agencia practices withholdings on it. Its subtotal is **derived**, not entered — see [[Margen (ganancia)]].
 _Avoid_: Proveedor ejecutor (suggests the Agencia merely intermediates — the mandato model that [ADR-0002](./docs/adr/0002-three-party-reventa-chain.md) rejected), Contratista
 
 **Leg**:
@@ -39,7 +39,12 @@ _Avoid_: conflating "retiene" with "responsable de IVA"
 RUT código 47. A retenido in the régimen simple is **not subject to retefuente nor ReteICA** — the retenedor practices neither; they are settled inside that party's SIMPLE return (ICA is consolidated into SIMPLE, art. 911 ET). ReteIVA under SIMPLE is **unverified** — the engine currently excludes it too, but that is an assumption, not a confirmed rule; see the open question in `.scratch/rut-fiscal-profile/issues/03-simple-47.md`.
 
 **No aplica (razón)**:
-Every withholding the engine zeroes carries the *reason* it did — the blocking responsabilidad ("el retenido está en régimen simple (47)", "no responsable de IVA (49)", "el retenedor no es agente de retención (07)") or the threshold that was not met ("base mínima del concepto: $105.000"). A zero is never shown bare: the UI prints the reason in its place, so an inapplicable withholding is never mistaken for an oversight or a bug.
+Every withholding the engine zeroes carries the *reason* it did — the **Bloqueo**, or the threshold that was not met ("base mínima del concepto: $105.000"). The reason is engine output: it sits on the withholding's `detalle`, is asserted by the chain fixtures, and is **surfaced once per leg in the notes panel, never per row**. A withholding that does not apply renders no row at all. The **IVA line is the exception** — it always renders, with its reason, because it is a line of the invoice rather than a deduction, and hiding it would leave subtotal and [[Neto]] identical and unexplained. See [ADR-0004](./docs/adr/0004-inapplicable-withholdings-are-hidden.md).
+_Avoid_: printing the reason in the row's place (the pre-ADR-0004 behaviour), "cero mudo"
+
+**Bloqueo**:
+The single fact that stops a **whole leg** from withholding anything: the retenedor is not an [[Agente de retención]], or the retenido is autorretenedor (15) or in [[Régimen simple (SIMPLE)]]. Because it is computed per leg rather than per withholding, all three withholdings take the *same* reason at once — which is why printing that reason per row repeated it three times, and why ADR-0004 hides the rows instead.
+_Avoid_: treating it as a per-retención condition (base mínima is that; bloqueo is not)
 
 **Retefuente**:
 Withholding on income tax (retención en la fuente a título de renta). Rate depends on concepto and the retenido's declarante status; base is the subtotal, never the neto. Applies only above the concepto's base mínima.
