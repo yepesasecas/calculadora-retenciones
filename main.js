@@ -136,12 +136,18 @@ function tarifasDe(leg, concepto, retenido, icaTarifaPorMil) {
   };
 }
 
-// Las tres líneas de retención de un leg, con su tarifa. Mismo orden siempre.
-const filasRetenciones = (leg, tarifas, etiquetas = {}) => [
-  filaDetalle(etiquetas.retefuente || "Retefuente", leg.detalle.retefuente, tarifas.retefuente, true),
-  filaDetalle(etiquetas.reteica || "ReteICA", leg.detalle.reteica, tarifas.reteica, true),
-  filaDetalle(etiquetas.reteiva || "ReteIVA", leg.detalle.reteiva, tarifas.reteiva, true),
-].join("");
+const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
+
+// Una retención con razón no pinta fila (ADR-0004): la razón se enuncia una sola
+// vez por leg, en el panel de notas. El bloqueo es por leg, así que lo normal es
+// que las tres desaparezcan juntas y no quede ninguna.
+const retencionesQueAplican = leg => RETENCIONES.filter(([id]) => !leg.detalle[id].razon);
+
+// Las líneas de retención de un leg, con su tarifa. Mismo orden siempre.
+const filasRetenciones = (leg, tarifas, etiquetas = {}) =>
+  retencionesQueAplican(leg)
+    .map(([id, nombre]) => filaDetalle(etiquetas[id] || nombre, leg.detalle[id], tarifas[id], true))
+    .join("");
 
 // Proyección del leg 1: lo que el Cliente final factura, retiene y gira a Matiz.
 function legCliente(leg, ivaRate, tarifas) {
@@ -183,17 +189,22 @@ function legProveedor(leg, ivaRate, tarifas, sinProveedor) {
 // Col 4: proyección pura del leg 2 como instrucción para el proveedor.
 function specProveedor(leg, ivaRate, tarifas, sinProveedor) {
   if (sinProveedor) return `<p class="hint">No hay proveedor que facture: el margen se lleva el contrato completo.</p>`;
+  // Sin retenciones que pintar no hay nada que encabezar: se van el encabezado y
+  // la tabla, y queda el giro solo — que es la cifra por la que se mira esta
+  // columna, y nunca se oculta.
+  const giro = fila("<b>Le giras</b>", leg.totalAGirar, "total");
+  const separa = ` style="margin-top:14px"`;
+  const retenciones = retencionesQueAplican(leg).length
+    ? `<p class="hint"${separa}>Retenciones que le practicas:</p>
+    <table class="breakdown">${filasRetenciones(leg, tarifas)}${giro}</table>`
+    : `<table class="breakdown"${separa}>${giro}</table>`;
   return `<p class="hint">Pídele al proveedor que facture exactamente esto.</p>
     <table class="breakdown">
       ${fila("Subtotal", leg.subtotal)}
       ${filaDetalle("IVA", leg.detalle.iva, pct(ivaRate), false)}
       ${fila("<b>Total de su factura</b>", leg.neto, "total")}
     </table>
-    <p class="hint" style="margin-top:14px">Retenciones que le practicas:</p>
-    <table class="breakdown">
-      ${filasRetenciones(leg, tarifas)}
-      ${fila("<b>Le giras</b>", leg.totalAGirar, "total")}
-    </table>`;
+    ${retenciones}`;
 }
 
 function render() {

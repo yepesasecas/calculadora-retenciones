@@ -48,3 +48,19 @@ muestra `el retenido no es responsable de IVA (49)`, y la nota nueva del ticket 
 dice casi lo mismo. Al ocultar las filas de retención esas dos quedan juntas en
 pantalla, que es justo la repetición contra la que abre el spec. Revisar la
 redacción de una de las dos al implementar este ticket.
+
+**Revisado — se deja como está.** Las dos frases enuncian el mismo hecho del RUT
+pero para rubros distintos: una dice por qué la factura no lleva IVA, la otra por
+qué no hay ReteIVA. No es la repetición que motivó el spec (tres filas idénticas
+del mismo rubro): es una causa con dos consecuencias, y ocultar cualquiera de las
+dos dejaría un rubro sin explicar. Las alternativas cuestan más de lo que arreglan:
+suprimir la nota cuando coincide con la fila de IVA acoplaría `dominio/` a lo que
+la vista pinta, y redactar la nota por rama rompería la derivación desde la razón
+que evita que nota y razón diverjan.
+
+**Encabezado de la col 4: la condición es "no queda ninguna retención por pintar",
+no "el leg está bloqueado".** Es más amplio que la decisión 5 del spec, que hablaba
+del bloqueo del leg. Un leg no bloqueado en el que las tres caigan por su cuenta
+(las dos bases mínimas más ReteIVA inaplicable) también pierde el encabezado —
+correcto: encabezar una tabla vacía no tiene sentido. Queda bendecido aquí en vez
+de quedar como accidente.
