@@ -1,0 +1,57 @@
+// Tabla DIAN de responsabilidades del RUT (casilla 53), reconciliada de la lista
+// 2026 (dian-rut.com) y un PDF DIAN. `implies` = hechos fiscales que aporta el
+// código ([] = no afecta la retención). "Relevante" = implies no vacío.
+// `note` marca códigos obsoletos o con salvedad. Gaps 25/27-31/43/44/51: sin uso.
+export const RESPONSABILIDADES = [
+  { code: "01", nombre: "Aporte especial para la administración de justicia",      implies: [] },
+  { code: "02", nombre: "Gravamen a los movimientos financieros",                  implies: [] },
+  { code: "03", nombre: "Impuesto al patrimonio",                                  implies: [] },
+  { code: "04", nombre: "Renta y complementarios — régimen especial",              implies: ["declarante"] },
+  { code: "05", nombre: "Renta y complementarios — régimen ordinario",             implies: ["declarante"] },
+  { code: "06", nombre: "Ingresos y patrimonio",                                   implies: [], note: "No contribuyente de renta — ¿declarante? verificar." },
+  { code: "07", nombre: "Retención en la fuente a título de renta",                implies: ["agenteRetefuente"] },
+  { code: "08", nombre: "Retención de timbre nacional",                            implies: [] },
+  { code: "09", nombre: "Retención en la fuente en el IVA",                        implies: ["agenteReteIVA"] },
+  { code: "10", nombre: "Usuario aduanero",                                        implies: [] },
+  { code: "11", nombre: "Ventas régimen común",                                    implies: ["responsableIVA"], note: "OBSOLETO (pre-2019) — hoy código 48." },
+  { code: "12", nombre: "Ventas régimen simplificado",                             implies: ["noResponsableIVA"], note: "OBSOLETO (pre-2019) — hoy código 49." },
+  { code: "13", nombre: "Gran contribuyente",                                      implies: ["granContribuyente"] },
+  { code: "14", nombre: "Informante de exógena",                                   implies: [] },
+  { code: "15", nombre: "Autorretenedor",                                          implies: ["autorretenedor"] },
+  { code: "16", nombre: "Obligación de facturar (ingresos excluidos)",             implies: [] },
+  { code: "17", nombre: "Profesionales de compra y venta de divisas",              implies: [] },
+  { code: "18", nombre: "Precios de transferencia",                                implies: [] },
+  { code: "19", nombre: "Productor y/o exportador de bienes exentos",              implies: [] },
+  { code: "20", nombre: "Obtención NIT",                                           implies: [] },
+  { code: "21", nombre: "Ingreso o salida del país de divisas",                    implies: [] },
+  { code: "22", nombre: "Deberes formales a nombre de terceros",                   implies: [] },
+  { code: "23", nombre: "Agente de retención en ventas (IVA)",                     implies: ["agenteReteIVA"], note: "Se solapa con el código 09." },
+  { code: "24", nombre: "Declaración consolidada precios de transferencia",        implies: [] },
+  { code: "26", nombre: "Declaración individual precios de transferencia",         implies: [] },
+  { code: "32", nombre: "Impuesto Nacional a la Gasolina y al ACPM",               implies: [] },
+  { code: "33", nombre: "Impuesto Nacional al consumo",                            implies: [] },
+  { code: "34", nombre: "Régimen simplificado INC restaurantes y bares",           implies: [], note: "OBSOLETO." },
+  { code: "35", nombre: "Renta para la equidad — CREE",                            implies: [], note: "OBSOLETO." },
+  { code: "36", nombre: "Establecimiento permanente",                              implies: [] },
+  { code: "37", nombre: "Obligado a facturar electrónicamente",                    implies: [] },
+  { code: "38", nombre: "Facturación electrónica voluntaria",                      implies: [] },
+  { code: "39", nombre: "Proveedor de Servicios Tecnológicos PST",                 implies: [] },
+  { code: "40", nombre: "Impuesto a la Riqueza",                                   implies: [], note: "OBSOLETO." },
+  { code: "41", nombre: "Declaración anual de activos en el exterior",             implies: [] },
+  { code: "42", nombre: "Obligado a llevar contabilidad",                          implies: [] },
+  { code: "45", nombre: "Autorretenedor de rendimientos financieros",             implies: [], note: "Autorretención específica — no modelada." },
+  { code: "46", nombre: "IVA prestadores de servicios desde el exterior",          implies: [] },
+  { code: "47", nombre: "Régimen Simple de Tributación — SIMPLE",                  implies: ["simple"], note: "No sujeto a retefuente ni ReteICA." },
+  { code: "48", nombre: "Impuesto sobre las ventas – IVA",                         implies: ["responsableIVA"] },
+  { code: "49", nombre: "No responsable de IVA",                                   implies: ["noResponsableIVA"] },
+  { code: "50", nombre: "No responsable de consumo (restaurantes y bares)",        implies: [] },
+  { code: "52", nombre: "Facturador electrónico",                                  implies: [] },
+  { code: "53", nombre: "Persona jurídica no responsable de IVA",                  implies: ["noResponsableIVA"] },
+  { code: "54", nombre: "Intercambio automático de información — CRS",             implies: [] },
+  { code: "55", nombre: "Informante de beneficiarios finales",                     implies: [] },
+  { code: "56", nombre: "Impuesto al carbono",                                     implies: [] },
+];
+
+export const COD = Object.fromEntries(RESPONSABILIDADES.map(r => [r.code, r]));
+
+export const esRelevante = c => (COD[c] ? COD[c].implies.length > 0 : false);

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calculadora de retenciones — Colombia 2026</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1a1d21; --muted: #6b7280;
+    --line: #e5e7eb; --accent: #0f5132; --warn-bg: #fff8e1; --warn-ink: #7a5a00;
+    --bad: #b91c1c; --ok: #15803d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161a; --panel: #1e2126; --ink: #e7e9ec; --muted: #9aa1ab;
+      --line: #2e333a; --accent: #7dd3a8; --warn-bg: #3a3110; --warn-ink: #e8c96a;
+      --bad: #f87171; --ok: #4ade80;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1480px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; font-size: .9rem; max-width: 78ch; }
+  .cols { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 18px 20px; flex: 1 1 320px; min-width: 0;
+  }
+  .panel h2 {
+    font-size: .82rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin: 0 0 12px; font-weight: 700;
+  }
+  fieldset { border: 1px solid var(--line); border-radius: 8px; margin: 0 0 14px; padding: 10px 14px 12px; }
+  legend { font-weight: 600; font-size: .85rem; padding: 0 6px; }
+  label { display: block; margin: 8px 0 2px; font-size: .85rem; color: var(--muted); }
+  select, input[type=text], input[type=number] {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); color: var(--ink); font-size: .95rem;
+  }
+  .chk { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: .9rem; color: var(--ink); }
+  .chk input { width: auto; }
+  .codeGrid { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 2px; }
+  .codeGrid.otras { margin-top: 4px; }
+  .codeChk { display: flex; align-items: baseline; gap: 8px; font-size: .85rem; color: var(--ink); }
+  .codeChk input { width: auto; }
+  .codeChk .code { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 1.6em; }
+  .codeChk.inert { color: var(--muted); }
+  .codeChk .rm { cursor: pointer; color: var(--bad); margin-left: auto; font-size: .8rem; }
+  .derived { font-size: .78rem; color: var(--muted); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
+  .derived .on { color: var(--ok); font-weight: 600; }
+  .derived .alert { color: var(--warn-ink); background: var(--warn-bg); border-radius: 5px; padding: 3px 7px; margin-top: 4px; }
+  .hint { font-size: .78rem; color: var(--muted); margin: 2px 0 0; }
+  .trap { color: var(--warn-ink); background: var(--warn-bg); border-radius: 6px; padding: 6px 9px; font-size: .8rem; margin-top: 6px; }
+  table.breakdown { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  table.breakdown td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
+  table.breakdown td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.breakdown tr.total td { font-weight: 700; font-size: 1.05rem; border-bottom: none; color: var(--accent); }
+  table.breakdown tr.ded td:last-child { color: var(--bad); }
+  table.breakdown tr.na td { color: var(--muted); }
+  table.breakdown tr.na td:last-child { color: var(--muted); font-style: italic; }
+  table.breakdown td .porque { color: var(--muted); font-size: .78rem; display: block; }
+  /* Un leg de la cadena: encabezado + su propia tabla de líneas. */
+  .leg { margin-bottom: 18px; }
+  .leg > h3 {
+    font-size: .8rem; margin: 0; padding-bottom: 4px; font-weight: 700;
+    border-bottom: 2px solid var(--line); color: var(--ink);
+  }
+  .leg > h3 span { font-weight: 400; color: var(--muted); }
+  .ganancia {
+    background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px;
+    padding: 10px 12px; display: flex; justify-content: space-between; gap: 10px;
+    font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums;
+  }
+  .margen { display: flex; gap: 8px; align-items: center; }
+  .margen select { width: auto; flex: 0 0 auto; }
+  .split { font-size: .82rem; color: var(--muted); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .split b { color: var(--ink); font-variant-numeric: tabular-nums; }
+  .split.bad { color: var(--bad); }
+  .note { background: var(--warn-bg); color: var(--warn-ink); border-radius: 8px; padding: 9px 12px; font-size: .84rem; margin-top: 10px; }
+  .muted-note { color: var(--muted); font-size: .8rem; margin-top: 10px; }
+  details { margin-top: 26px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .tests { overflow-x: auto; }
+  table.golden { border-collapse: collapse; font-size: .8rem; margin-top: 10px; min-width: 640px; }
+  table.golden th, table.golden td { border: 1px solid var(--line); padding: 4px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+  table.golden th:first-child, table.golden td:first-child { text-align: left; }
+  .pass { color: var(--ok); font-weight: 600; }
+  .fail { color: var(--bad); font-weight: 600; }
+  .tol  { color: var(--warn-ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calculadora de retenciones — Colombia 2026</h1>
+  <p class="sub">Cadena de tres partes: el <b>Cliente final</b> te contrata, tú (<b>Matiz</b>) subcontratas al <b>Proveedor</b>. Liquida los dos tramos a la vez — lo que te giran, lo que retienes, lo que giras y tu ganancia. Bases vigentes desde el 1 de julio de 2026.</p>
+
+  <form id="form" class="cols" autocomplete="off">
+    <section class="panel">
+      <h2>1 · El trabajo</h2>
+      <label for="contrato">Valor del contrato (COP, antes de IVA)</label>
+      <input type="text" id="contrato" inputmode="numeric" placeholder="100.000.000">
+      <p class="hint">Lo que le facturas al Cliente final por el trabajo completo.</p>
+
+      <label for="concepto">Concepto</label>
+      <select id="concepto"></select>
+      <div class="trap" id="trapNote" hidden></div>
+      <p class="hint">Un solo concepto para los dos tramos: define tarifa y base de retefuente, y la clase de ICA.</p>
+
+      <label for="margenModo">Tu margen</label>
+      <div class="margen">
+        <select id="margenModo">
+          <option value="porcentaje" selected>%</option>
+          <option value="fijo">$ fijo</option>
+        </select>
+        <input type="number" id="margenPct" step="0.01" min="0" value="20">
+        <input type="text" id="margenFijo" inputmode="numeric" placeholder="20.000.000" hidden>
+      </div>
+      <p class="hint">Lo que te quedas del contrato. El subtotal del Proveedor se deriva: contrato − margen.</p>
+      <div class="split" id="split"></div>
+    </section>
+
+    <section class="panel">
+      <h2>2 · Las partes</h2>
+      <fieldset>
+        <legend>Cliente final (te contrata y te retiene)</legend>
+        <p class="hint">Responsabilidades del RUT (casilla 53). Sin agente de retefuente (07) no te practica retenciones.</p>
+        <div class="codeGrid" id="cfRelevant"></div>
+        <label for="cfAddOtra">Otras responsabilidades (no afectan la retención)</label>
+        <select id="cfAddOtra"></select>
+        <div class="codeGrid otras" id="cfOtras"></div>
+        <div class="derived" id="cfDerived"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Matiz — tú (te retienen y retienes)</legend>
+        <p class="hint">Tu RUT. Define el IVA que facturas al Cliente y si puedes retenerle al Proveedor.</p>
+        <div class="codeGrid" id="agRelevant"></div>
+        <label for="agAddOtra">Otras responsabilidades (no afectan la retención)</label>
+        <select id="agAddOtra"></select>
+        <div class="codeGrid otras" id="agOtras"></div>
+        <div class="derived" id="agDerived"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Proveedor (lo subcontratas y le retienes)</legend>
+        <p class="hint">RUT del proveedor. Régimen simple (47) y no responsable de IVA (49) cambian el tramo 2.</p>
+        <div class="codeGrid" id="prRelevant"></div>
+        <label for="prAddOtra">Otras responsabilidades (no afectan la retención)</label>
+        <select id="prAddOtra"></select>
+        <div class="codeGrid otras" id="prOtras"></div>
+        <div class="derived" id="prDerived"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Territorio e IVA</legend>
+        <label for="muni">Municipio (ReteICA)</label>
+        <select id="muni"></select>
+        <label for="icaTarifa">Tarifa ICA (por mil) — según la actividad</label>
+        <input type="number" id="icaTarifa" step="0.01" min="0">
+        <label for="ivaRate">Tarifa de IVA</label>
+        <select id="ivaRate">
+          <option value="0.19" selected>19 % (general)</option>
+          <option value="0.05">5 % (reducida)</option>
+          <option value="0">0 % (exento / excluido)</option>
+        </select>
+      </fieldset>
+    </section>
+
+    <section class="panel">
+      <h2>3 · La plata, paso a paso</h2>
+      <div id="flujo"></div>
+      <div id="notes"></div>
+      <p class="muted-note">Herramienta de estimación. Tarifas y bases: tabla nacional 2026 (vigencia 1 jul en adelante) y datos municipales de ReteICA. Verifique casos no estándar con su contador(a).</p>
+    </section>
+
+    <section class="panel">
+      <h2>4 · Qué debe facturarte el Proveedor</h2>
+      <div id="specProveedor"></div>
+    </section>
+  </form>
+
+  <details>
+    <summary>Verificación — casos de cadena</summary>
+    <div class="tests" id="tests"></div>
+    <p class="muted-note">Los siete casos de cadena fijan los dos tramos completos y se exigen exactos. La verificación con código de salida vive en <code>npm test</code>.</p>
+  </details>
+</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

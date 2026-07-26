@@ -1,0 +1,13 @@
+{
+  "name": "rete",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Calculadora de retenciones — Colombia 2026. Módulos ES sin build ni dependencias (ADR-0003).",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\""
+  }
+}
