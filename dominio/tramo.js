@@ -68,6 +68,10 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
       razonReteiva = null;
       notas.push("ReteIVA (15 % del IVA) estimado según la matriz de regímenes — regla no verificada contra factura real: confirmar con la contadora.");
     }
+    // Estas cuatro razones sólo vivían en la fila de la tabla; al ocultarse las
+    // retenciones que no aplican, la nota es el único sitio donde se enuncian.
+    // Se deriva de la razón para que las dos no puedan divergir.
+    if (razonReteiva) notas.push(`ReteIVA: ${razonReteiva} — no aplica.`);
   }
 
   return {
