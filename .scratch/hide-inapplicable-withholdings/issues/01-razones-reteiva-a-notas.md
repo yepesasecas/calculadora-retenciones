@@ -20,11 +20,13 @@ vías y ver la nota bajo `Tramo 1:` / `Tramo 2:`.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Las cuatro razones de ReteIVA producen una nota en el leg correspondiente
-- [ ] La redacción de cada nota nombra el código del RUT que la causa, como las notas existentes
-- [ ] `detalle[].razon` no cambia: las afirmaciones `razones1` / `razones2` de los 7 casos pasan sin tocarse
-- [ ] Hay pruebas que fijan las cuatro notas, una por condición
-- [ ] `npm test` en verde
-- [ ] `grep -rn "vista/" dominio datos` sigue vacío (ADR-0003)
+Done 2026-07-25 — 39eb05e. Las cuatro razones de ReteIVA llegan al panel de notas; seis pruebas nuevas las fijan.
+
+- [x] Las cuatro razones de ReteIVA producen una nota en el leg correspondiente
+- [x] La redacción de cada nota nombra el código del RUT que la causa, como las notas existentes
+- [x] `detalle[].razon` no cambia: las afirmaciones `razones1` / `razones2` de los 7 casos pasan sin tocarse
+- [x] Hay pruebas que fijan las cuatro notas, una por condición
+- [x] `npm test` en verde
+- [x] `grep -rn "vista/" dominio datos` sigue vacío (ADR-0003)

@@ -29,16 +29,18 @@ en pantalla a una.
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Una retención con razón no pinta fila, en col 3 y en col 4
-- [ ] La fila de IVA se pinta siempre, con su razón cuando no aplica
-- [ ] Con el tramo entero bloqueado, col 4 no pinta el encabezado de retenciones ni su tabla
-- [ ] `Le giras` sigue visible con el tramo entero bloqueado
-- [ ] Con el tramo entero bloqueado, col 3 conserva el neto y el total aunque coincidan
-- [ ] Con bloqueo parcial, se pintan las retenciones que sí aplican y el encabezado permanece
-- [ ] Las cifras de los 7 casos de cadena no cambian
-- [ ] `npm test` en verde
+Done 2026-07-25 — 1d23615. Verificado contra el HTML real con un arnés de DOM desechable: leg bloqueado, bloqueo parcial, IVA al 0 % y sin proveedor.
+
+- [x] Una retención con razón no pinta fila, en col 3 y en col 4
+- [x] La fila de IVA se pinta siempre, con su razón cuando no aplica
+- [x] Con el tramo entero bloqueado, col 4 no pinta el encabezado de retenciones ni su tabla
+- [x] `Le giras` sigue visible con el tramo entero bloqueado
+- [x] Con el tramo entero bloqueado, col 3 conserva el neto y el total aunque coincidan
+- [x] Con bloqueo parcial, se pintan las retenciones que sí aplican y el encabezado permanece
+- [x] Las cifras de los 7 casos de cadena no cambian
+- [x] `npm test` en verde
 
 ## Comments
 

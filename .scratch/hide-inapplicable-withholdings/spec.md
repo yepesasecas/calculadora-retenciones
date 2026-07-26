@@ -1,6 +1,8 @@
 # Ocultar las retenciones que no aplican
 
-Status: ready-for-agent
+Status: done
+
+Delivered 2026-07-25 — los 3 tickets landed (39eb05e, 1d23615, 1088db6).
 
 Source: a `/grill-with-docs` session (2026-07-25). There was no prior spec — the
 grilling *is* the spec. Eight decisions, all recorded below.

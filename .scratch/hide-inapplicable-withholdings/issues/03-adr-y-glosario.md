@@ -20,11 +20,13 @@ borra la historia; el ADR es donde vive el cambio de opinión.
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Existe un ADR nuevo, numerado a continuación del último, con el formato de los existentes
-- [ ] El ADR explica la reversión, la excepción del IVA, y por qué la ausencia es aceptable dado el panel de notas
-- [ ] El término `No aplica (razón)` de `CONTEXT.md` conserva el nombre y describe el comportamiento nuevo
-- [ ] El párrafo del README que promete el porqué por fila queda corregido
-- [ ] US-27 de `.scratch/module-split/spec.md` queda intacto
-- [ ] `npm test` en verde
+Done 2026-07-25 — 1088db6. ADR-0004, el término `No aplica (razón)` reescrito, `Bloqueo` añadido y el README corregido.
+
+- [x] Existe un ADR nuevo, numerado a continuación del último, con el formato de los existentes
+- [x] El ADR explica la reversión, la excepción del IVA, y por qué la ausencia es aceptable dado el panel de notas
+- [x] El término `No aplica (razón)` de `CONTEXT.md` conserva el nombre y describe el comportamiento nuevo
+- [x] El párrafo del README que promete el porqué por fila queda corregido
+- [x] US-27 de `.scratch/module-split/spec.md` queda intacto
+- [x] `npm test` en verde
