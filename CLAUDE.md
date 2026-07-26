@@ -1,15 +1,15 @@
 Be extremely concise. Sacrifice grammar for the sake of concision.
 
-## Verificación
+## Verification
 
-Correr `npm test` antes de cada commit y antes de cada push. Sin dependencias, sin
-`npm install`: requiere Node >= 22. Un suite rojo no se commitea.
+Run `npm test` before every commit and every push. No dependencies, no
+`npm install`: requires Node >= 22. A red suite is never committed.
 
-`dominio/` y `datos/` no importan de `vista/` ni del formateador (ADR-0003).
-Verificable con `grep -rn "vista/" dominio datos`.
+`dominio/` and `datos/` must not import from `vista/` or the formatter (ADR-0003).
+Check with `grep -rn "vista/" dominio datos`.
 
-Desarrollo local: `python3 -m http.server` y abrir `http://localhost:8000/`.
-Abrir `index.html` con doble clic ya no funciona (módulos ES sobre `file://`).
+Local dev: `python3 -m http.server`, open `http://localhost:8000/`.
+Opening `index.html` by double-click no longer works (ES modules over `file://`).
 
 ## Agent skills
 
