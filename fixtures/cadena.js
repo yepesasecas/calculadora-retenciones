@@ -8,13 +8,20 @@
 // en ReteICA 0 y total 80.000.000, que es lo que se afirma abajo. El leg 1
 // reproduce el mockup exactamente. Para ver ReteICA practicada de verdad sobre el
 // proveedor, ver el caso "Proveedor NO SIMPLE".
+// «Demás actividades de servicios» en Bogotá, 9,66 por mil: la actividad de la
+// Agencia (publicidad, CIIU 7310) y la de los proveedores de estos casos. Va como
+// hecho declarado de la parte, no como tarifa de la cadena: cada tramo lee la de
+// su retenido.
+const ACTIVIDAD_AGENCIA = { actividadICA: "serviciosDemas" };
+
 export const CADENA_CASOS = [
   {
     nombre: "Mockup — margen 20 %",
     ent: {
       contrato: 100000000, margen: { modo: "porcentaje", valor: 20 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["47", "49"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 80000000, ganancia: 20000000,
@@ -37,8 +44,9 @@ export const CADENA_CASOS = [
     nombre: "Margen fijo — $ 15.000.000",
     ent: {
       contrato: 100000000, margen: { modo: "fijo", valor: 15000000 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["47", "49"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 85000000, ganancia: 15000000,
@@ -63,8 +71,9 @@ export const CADENA_CASOS = [
     nombre: "Proveedor NO SIMPLE — el tramo 2 sí retiene",
     ent: {
       contrato: 100000000, margen: { modo: "porcentaje", valor: 20 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07", "09"], proveedor: ["05", "48"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 80000000, ganancia: 20000000, sinProveedor: false,
@@ -86,8 +95,9 @@ export const CADENA_CASOS = [
     nombre: "Sin proveedor — margen 100 %",
     ent: {
       contrato: 50000000, margen: { modo: "porcentaje", valor: 100 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["05", "48"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 0, ganancia: 50000000, sinProveedor: true, error: null,
@@ -112,8 +122,9 @@ export const CADENA_CASOS = [
     nombre: "Bajo base mínima — retefuente y ReteICA en cero",
     ent: {
       contrato: 100000, margen: { modo: "porcentaje", valor: 20 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07", "09"], proveedor: ["05", "48"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 80000,
@@ -142,14 +153,14 @@ export const CADENA_CASOS = [
     nombre: "Agencia sin IVA, Proveedor con IVA — cada leg decide",
     ent: {
       contrato: 10000000, margen: { modo: "porcentaje", valor: 20 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "49", "07", "09"], proveedor: ["05", "48"],
       // La Agencia no es responsable de IVA, así que `agenteReteICA` arrancaría
       // apagado (su valor por defecto). Aquí se declara encendido: la calidad la
       // confiere el municipio por resolución y no depende del IVA. Sin esto el
       // tramo 2 no tendría ReteICA y el caso dejaría de hablar del IVA, que es
       // lo que vino a fijar.
-      declarados: { agencia: { agenteReteICA: true } },
+      declarados: { agencia: { ...ACTIVIDAD_AGENCIA, agenteReteICA: true }, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       leg1: { subtotal: 10000000, iva: 0, neto: 10000000,
@@ -169,8 +180,9 @@ export const CADENA_CASOS = [
     nombre: "Margen fijo mayor que el contrato — rechazado",
     ent: {
       contrato: 10000000, margen: { modo: "fijo", valor: 12000000 },
-      conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["05", "48"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA, proveedor: ACTIVIDAD_AGENCIA },
     },
     esp: {
       proveedorSubtotal: 0, ganancia: 12000000, sinProveedor: true,
@@ -186,6 +198,31 @@ export const CADENA_CASOS = [
         reteica: "base mínima municipal: $209.496",
         reteiva: "el retenedor no es agente de reteIVA (09/23)",
       },
+    },
+  },
+  {
+    // Cada tramo usa la tarifa de SU retenido: la Agencia factura «demás
+    // servicios» (9,66) y subcontrata a una imprenta, que en Bogotá es
+    // «consultoría profesional y contratistas de construcción» (8,66). Con una
+    // tarifa compartida el tramo 2 se habría liquidado al 9,66 del retenido del
+    // otro tramo — el error que este spec vino a corregir.
+    nombre: "Dos actividades — cada tramo con su tarifa",
+    ent: {
+      contrato: 100000000, margen: { modo: "porcentaje", valor: 20 },
+      conceptoId: "serviciosGenerales", municipioId: "bogota", ivaRate: 0.19,
+      clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["05", "48"],
+      declarados: {
+        agencia: ACTIVIDAD_AGENCIA,
+        proveedor: { actividadICA: "serviciosConsultoriaProfesional" },
+      },
+    },
+    esp: {
+      proveedorSubtotal: 80000000, ganancia: 20000000,
+      // 100.000.000 x 9,66/1000 = 966.000 · 80.000.000 x 8,66/1000 = 692.800
+      leg1: { reteica: 966000 },
+      leg2: { reteica: 692800 },
+      razones1: { reteica: null },
+      razones2: { reteica: null },
     },
   },
 ];

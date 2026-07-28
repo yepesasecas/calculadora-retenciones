@@ -11,7 +11,7 @@ const fmt = n => n.toLocaleString("es-CO");
 //
 // El IVA de cada leg sale del retenido: si el retenido no es responsable de IVA
 // (código 49/53), ese leg se factura sin IVA.
-export function calcularCadena({ contrato, margen, concepto, municipio, icaTarifaPorMil, ivaRate,
+export function calcularCadena({ contrato, margen, concepto, municipio, tarifaICAManual, ivaRate,
                                  clienteFinal, agencia, proveedor }) {
   const ganancia = margen.modo === "fijo"
     ? Math.round(margen.valor)
@@ -29,7 +29,7 @@ export function calcularCadena({ contrato, margen, concepto, municipio, icaTarif
   // Margen del 100 %: te quedas el contrato completo, no hay subcontrato.
   const sinProveedor = proveedorSubtotal === 0;
 
-  const comun = { concepto, municipio, icaTarifaPorMil };
+  const comun = { concepto, municipio, tarifaICAManual };
   const leg1 = calcular({
     ...comun, subtotal: contrato,
     ivaRate: agencia.responsableIVA ? ivaRate : 0,

@@ -58,6 +58,17 @@ for (const caso of CADENA_CASOS) {
   });
 }
 
-test("los siete casos de cadena siguen presentes", () => {
-  assert.equal(CADENA_CASOS.length, 7);
+test("los ocho casos de cadena siguen presentes", () => {
+  assert.equal(CADENA_CASOS.length, 8);
+});
+
+// La tarifa dejó de ser un dato de la cadena: es del retenido de cada tramo. Si
+// alguien la volviera a compartir, este caso daría los dos tramos al mismo milaje.
+test("cada tramo reporta la tarifa y la fuente de su propio retenido", () => {
+  const caso = CADENA_CASOS.find(c => c.nombre === "Dos actividades — cada tramo con su tarifa");
+  const r = liquidar(caso.ent);
+  assert.equal(r.leg1.tarifaICA.tarifaPorMil, 9.66);
+  assert.equal(r.leg2.tarifaICA.tarifaPorMil, 8.66);
+  assert.match(r.leg1.tarifaICA.fuente, /demás actividades de servicios/);
+  assert.match(r.leg2.tarifaICA.fuente, /Ac\. 780\/2020/);
 });

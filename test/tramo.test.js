@@ -18,7 +18,6 @@ const leg = ({ retenedor, retenido, ivaRate = 0.19 }) => calcular({
   retenido: deriveProfile(retenido),
   retenedor: deriveProfile(retenedor),
   municipio: BOGOTA,
-  icaTarifaPorMil: BOGOTA.tarifaPorMil,
 });
 
 // Las notas que explican por qué ReteIVA no aplica (no son la razón misma: esa
@@ -146,7 +145,6 @@ const legDeclarando = ({ retenedor, retenido, declRetenedor = {}, declRetenido =
   retenido: deriveProfile(retenido, declRetenido),
   retenedor: deriveProfile(retenedor, declRetenedor),
   municipio: BOGOTA,
-  icaTarifaPorMil: BOGOTA.tarifaPorMil,
 });
 
 // Bogotá designa agente retenedor de ICA a todo el régimen común por resolución

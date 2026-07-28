@@ -29,3 +29,6 @@ export const FACTURAS = [
 // Matiz es responsable de IVA y declarante de renta.
 export const FACTURA_CLIENTE = ["05", "48", "07"];
 export const FACTURA_MATIZ   = ["05", "48", "07"];
+// Matiz es agencia de publicidad (CIIU 7310), que en Bogotá liquida ICA como
+// «demás actividades de servicios»: de ahí sale el 9,66 de las seis facturas.
+export const FACTURA_MATIZ_ACTIVIDAD = { actividadICA: "serviciosDemas" };

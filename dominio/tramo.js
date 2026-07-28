@@ -1,3 +1,5 @@
+import { resolverTarifaICA, baseMinimaICA } from "./tarifa-ica.js";
+
 export const RETEIVA_TARIFA = 0.15; // art. 437-1 ET, tarifa general
 
 // TRANSITORIO: el motor todavía redacta sus razones en prosa `es-CO`, así que
@@ -60,12 +62,16 @@ const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["ret
 // practica las retenciones, al retenido se las practican. La Agencia es retenido
 // en el leg 1 y retenedor en el leg 2 — por eso los parámetros son relacionales
 // y no "vendedor"/"cliente" fijos (ver ADR-0002).
-export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, municipio, icaTarifaPorMil }) {
+export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, municipio, tarifaICAManual = 0 }) {
   const notas = [];
   const iva = Math.round(subtotal * ivaRate);
   const neto = subtotal + iva;
 
-  const baseICA = concepto.icaClase === "servicio" ? municipio.baseServicio : municipio.baseCompra;
+  // La tarifa es la de la actividad del **retenido** de este tramo, no una del
+  // municipio ni una compartida por la cadena [Ac. 65/2002 art. 11]. `icaClase`
+  // del concepto sobrevive, pero sólo para elegir la base mínima.
+  const tarifaICA = resolverTarifaICA({ municipio, retenido, tarifaManual: tarifaICAManual });
+  const baseICA = baseMinimaICA(municipio, concepto);
 
   // `razon` no nula = la retención no aplica, y dice por qué.
   const razones = {
@@ -76,7 +82,7 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
 
   const retefuente = razones.retefuente ? 0
     : Math.round(subtotal * concepto.tarifas[retenido.declarante ? "declarante" : "noDeclarante"]);
-  const reteica = razones.reteica ? 0 : Math.round(subtotal * icaTarifaPorMil / 1000);
+  const reteica = razones.reteica ? 0 : Math.round(subtotal * tarifaICA.tarifaPorMil / 1000);
   const reteiva = razones.reteiva ? 0 : Math.round(iva * RETEIVA_TARIFA);
 
   // Una línea por retención que no aplica, derivada de la razón para que las dos
@@ -85,14 +91,15 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
   for (const [id, nombre] of RETENCIONES)
     if (razones[id]) notas.push(`${nombre}: ${razones[id]} — no aplica.`);
 
-  if (!razones.reteica && municipio.baseServicio === 0 && municipio.baseCompra === 0 && municipio.id === "otro")
+  if (!razones.reteica && tarifaICA.aviso) notas.push(`ReteICA: ${tarifaICA.aviso}`);
+  if (!razones.reteica && municipio.baseMinima?.tipo === "sinCargar")
     notas.push("ReteICA: municipio sin bases mínimas cargadas — se aplicó la tarifa sin verificar tope. Confirme las reglas locales.");
   if (!razones.reteiva)
     notas.push("ReteIVA (15 % del IVA) estimado según la matriz de regímenes — regla no verificada contra factura real: confirmar con la contadora.");
 
   return {
     subtotal, iva, neto, retefuente, reteica, reteiva,
-    totalAGirar: neto - retefuente - reteica - reteiva, notas,
+    totalAGirar: neto - retefuente - reteica - reteiva, notas, tarifaICA,
     detalle: {
       iva:        { valor: iva, razon: iva > 0 ? null
                      : (retenido.responsableIVA ? "tarifa de IVA en 0 %" : "el retenido no es responsable de IVA (49)") },

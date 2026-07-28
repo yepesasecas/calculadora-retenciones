@@ -44,5 +44,10 @@ export function deriveProfile(codes, declarados = {}) {
   for (const h of HECHOS_MUNICIPALES)
     profile[h.id] = declarados[h.id] ?? h.porDefecto(profile);
 
+  // La actividad ICA es propiedad de la parte, no de la cadena ni del concepto:
+  // cada tramo lee la de su retenido. `null` = no informada, que en un municipio
+  // que retiene por actividad significa tarifa máxima (Ac. 65/2002 art. 11).
+  profile.actividadICA = declarados.actividadICA ?? null;
+
   return { ...profile, alerts };
 }

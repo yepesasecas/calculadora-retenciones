@@ -5,7 +5,7 @@ import { calcular } from "../dominio/tramo.js";
 import { deriveProfile } from "../dominio/perfil.js";
 import { CONCEPTOS } from "../datos/conceptos.js";
 import { MUNICIPIOS } from "../datos/municipios.js";
-import { FACTURAS, FACTURA_CLIENTE, FACTURA_MATIZ } from "../fixtures/facturas.js";
+import { FACTURAS, FACTURA_CLIENTE, FACTURA_MATIZ, FACTURA_MATIZ_ACTIVIDAD } from "../fixtures/facturas.js";
 
 const SERVICIOS = CONCEPTOS.find(c => c.id === "serviciosGenerales");
 const BOGOTA = MUNICIPIOS.find(m => m.id === "bogota");
@@ -20,12 +20,14 @@ for (const f of FACTURAS) {
       concepto: SERVICIOS,
       ivaRate: 0.19,
       retenedor: deriveProfile(FACTURA_CLIENTE),
-      retenido: deriveProfile(FACTURA_MATIZ),
+      retenido: deriveProfile(FACTURA_MATIZ, FACTURA_MATIZ_ACTIVIDAD),
       municipio: BOGOTA,
-      icaTarifaPorMil: 9.66,
     });
     for (const campo of ["iva", "neto", "retefuente", "reteica", "totalAGirar"])
       assert.equal(r[campo], f[campo] + (f.desfaseDoc[campo] ?? 0), campo);
+    // La tarifa ya no se digita: sale de la tabla de Bogotá por la actividad de Matiz.
+    assert.equal(r.tarifaICA.tarifaPorMil, 9.66);
+    assert.equal(r.tarifaICA.aviso, null);
     // Ninguno de los cinco clientes es agente de reteIVA: por eso el lote no la trae.
     assert.equal(r.reteiva, 0);
     assert.equal(r.detalle.reteiva.razon, "el retenedor no es agente de reteIVA (09/23)");

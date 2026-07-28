@@ -48,15 +48,20 @@ tabla, el respaldo a tarifa máxima y el aviso sin construir un tramo entero.
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Los dos tramos pueden tener tarifas distintas, y cada uno usa la de su retenido
-- [ ] La tabla de Bogotá está en los datos, con acuerdo y artículo citados por fila
-- [ ] La actividad se busca por CIIU o por nombre
-- [ ] «No informada» aplica la tarifa máxima y lo dice en las notas
-- [ ] Una tarifa libre fuera de tabla calcula y produce el aviso
-- [ ] El resultado dice de qué acuerdo salió la tarifa aplicada
-- [ ] La procedencia en pesos de 2002 de las bases mínimas queda anotada
-- [ ] La resolución de la tarifa se prueba directamente, sin construir un tramo
-- [ ] Las seis facturas de referencia dan lo mismo (9,66, «demás servicios», Bogotá)
-- [ ] `npm test` en verde
+Hecho 2026-07-28. La tabla de Bogotá lleva códigos CIIU **representativos** por
+grupo, no el listado íntegro de la SHD (que no está transcrito en el repo): la
+clasificación de fondo es por el nombre del grupo, que es lo que la norma enuncia.
+Queda anotado en `datos/ica-bogota.js`.
+
+- [x] Los dos tramos pueden tener tarifas distintas, y cada uno usa la de su retenido
+- [x] La tabla de Bogotá está en los datos, con acuerdo y artículo citados por fila
+- [x] La actividad se busca por CIIU o por nombre
+- [x] «No informada» aplica la tarifa máxima y lo dice en las notas
+- [x] Una tarifa libre fuera de tabla calcula y produce el aviso
+- [x] El resultado dice de qué acuerdo salió la tarifa aplicada
+- [x] La procedencia en pesos de 2002 de las bases mínimas queda anotada
+- [x] La resolución de la tarifa se prueba directamente, sin construir un tramo
+- [x] Las seis facturas de referencia dan lo mismo (9,66, «demás servicios», Bogotá)
+- [x] `npm test` en verde

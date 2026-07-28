@@ -75,6 +75,8 @@
   .declarados .rotulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
   .declarados label { display: flex; gap: 6px; align-items: baseline; margin: 5px 0 0; font-size: .8rem; color: var(--ink); cursor: pointer; }
   .declarados label input { flex: 0 0 auto; margin: 0; }
+  .declarados input[type=text] { width: 100%; margin-top: 4px; font-size: .82rem; }
+  .declarados .campo { display: block; margin-top: 8px; }
   .derived { font-size: .78rem; color: var(--muted); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
   .derived .on { color: var(--ok); font-weight: 600; }
   .derived .alert { color: var(--warn-ink); background: var(--warn-bg); border-radius: 5px; padding: 3px 7px; margin-top: 4px; }
@@ -175,8 +177,10 @@
       <h2 class="paso">3 · Territorio e IVA</h2>
       <label for="muni">Municipio (ReteICA)</label>
       <select id="muni"></select>
-      <label for="icaTarifa">Tarifa ICA (por mil) — según la actividad</label>
-      <input type="number" id="icaTarifa" step="0.01" min="0">
+      <p class="hint">Donde se ejecuta la prestación (Ley 1819/2016 art. 343), no el domicilio de quien paga.</p>
+      <label for="icaTarifa">Tarifa ICA digitada (por mil)</label>
+      <input type="number" id="icaTarifa" step="0.01" min="0" value="0">
+      <p class="hint">Sólo se usa cuando el retenido no informa actividad. Si no figura en la tabla del municipio, se calcula y se avisa.</p>
       <label for="ivaRate">Tarifa de IVA</label>
       <select id="ivaRate">
         <option value="0.19" selected>19 % (general)</option>
@@ -197,6 +201,8 @@
       <div id="specProveedor"></div>
     </section>
   </form>
+
+  <datalist id="actividadesICA"></datalist>
 
   <details>
     <summary>Verificación — casos de cadena</summary>
