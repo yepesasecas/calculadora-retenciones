@@ -68,10 +68,25 @@ test("ReteIVA aplicada no produce razón", () => {
   assert.equal(r.detalle.reteiva.razon, null);
 });
 
-// El bloqueo del leg entero ya tenía nota propia; las razones de ReteIVA no deben
-// duplicarla cuando el leg no retiene nada.
-test("un leg bloqueado no agrega razones de ReteIVA", () => {
+// CAMBIO DE CONDUCTA (ticket 02): esta prueba afirmaba que un leg "bloqueado" no
+// agregaba nota de ReteIVA, porque la razón del bloqueo ya se enunciaba una vez
+// por tramo. Retirado el bloqueo (ADR-0005), cada retención enuncia la suya: hay
+// nota de ReteIVA siempre que ReteIVA no aplique, cualquiera sea el motivo.
+test("un retenedor que no retiene nada produce una nota por retención", () => {
   const r = leg({ retenedor: ["05", "48"], retenido: ["05", "48"] });
-  assert.deepEqual(notasNoAplicaReteIVA(r), []);
   assert.equal(r.detalle.reteiva.razon, "el retenedor no es agente de retención (07)");
+  assert.deepEqual(notasNoAplicaReteIVA(r),
+    ["ReteIVA: el retenedor no es agente de retención (07) — no aplica."]);
+});
+
+// La nota se deriva de la razón: si divergieran, la pantalla explicaría una cosa
+// y el motor habría hecho otra. Es la garantía que sostiene ADR-0004.
+test("cada retención que no aplica deja su propia nota, derivada de su razón", () => {
+  const r = leg({ retenedor: ["05", "48"], retenido: ["05", "48"] });
+  const noAplica = ["Retefuente", "ReteICA", "ReteIVA"]
+    .map(n => [n, r.detalle[n.toLowerCase()].razon])
+    .filter(([, razon]) => razon)
+    .map(([n, razon]) => `${n}: ${razon} — no aplica.`);
+  assert.equal(noAplica.length, 3);
+  assert.deepEqual(r.notas.filter(n => n.endsWith("— no aplica.")), noAplica);
 });

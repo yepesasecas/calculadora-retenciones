@@ -138,9 +138,9 @@ function tarifasDe(leg, concepto, retenido, icaTarifaPorMil) {
 
 const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
 
-// Una retención con razón no pinta fila (ADR-0004): la razón se enuncia una sola
-// vez por leg, en el panel de notas. El bloqueo es por leg, así que lo normal es
-// que las tres desaparezcan juntas y no quede ninguna.
+// Una retención con razón no pinta fila (ADR-0004): la razón se enuncia en el
+// panel de notas, una línea por retención que no aplica (ADR-0005). Las tres
+// pueden desaparecer juntas, pero cada una por su propio motivo.
 const retencionesQueAplican = leg => RETENCIONES.filter(([id]) => !leg.detalle[id].razon);
 
 // Las líneas de retención de un leg, con su tarifa. Mismo orden siempre.

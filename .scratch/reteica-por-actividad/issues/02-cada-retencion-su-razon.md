@@ -22,11 +22,15 @@ dos no puedan divergir.
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] No queda ninguna variable `bloqueo` en el dominio
-- [ ] Las 181 pruebas existentes pasan **sin modificarse**
-- [ ] Las fixtures de cadena no cambian de valor esperado
-- [ ] El panel de notas enuncia una línea por retención que no aplica
-- [ ] Cada nota se deriva de la razón de su retención, no de una frase compartida
-- [ ] `npm test` en verde
+Hecho 2026-07-28. Una desviación: la prueba `un leg bloqueado no agrega razones de
+ReteIVA` **sí** se modificó — afirmaba justo la premisa que este ticket retira (que
+la razón se enuncia una vez por tramo). Las otras 180 pasaron sin tocarse.
+
+- [x] No queda ninguna variable `bloqueo` en el dominio
+- [~] Las 181 pruebas existentes pasan sin modificarse — salvo la que fijaba la premisa retirada (ver arriba)
+- [x] Las fixtures de cadena no cambian de valor esperado
+- [x] El panel de notas enuncia una línea por retención que no aplica
+- [x] Cada nota se deriva de la razón de su retención, no de una frase compartida
+- [x] `npm test` en verde
