@@ -11,7 +11,16 @@ const fmt = n => n.toLocaleString("es-CO");
 //
 // El IVA de cada leg sale del retenido: si el retenido no es responsable de IVA
 // (código 49/53), ese leg se factura sin IVA.
+//
+// El municipio es del **leg**, no de la cadena: un servicio se grava donde se
+// ejecuta la prestación (Ley 1819/2016 art. 343), y los dos legs son dos
+// servicios distintos que pueden ocurrir en sitios distintos — una campaña
+// vendida en Bogotá cuya grabación se subcontrata en Medellín son dos
+// municipios, con reglas y bases mínimas de forma distinta. `municipio` queda
+// como valor por defecto de ambos, para que el caso corriente —todo en una
+// ciudad— siga siendo un solo campo.
 export function calcularCadena({ contrato, margen, concepto, municipio, tarifaICAManual, ivaRate,
+                                 municipioLeg1 = municipio, municipioLeg2 = municipio,
                                  clienteFinal, agencia, proveedor }) {
   const ganancia = margen.modo === "fijo"
     ? Math.round(margen.valor)
@@ -29,14 +38,14 @@ export function calcularCadena({ contrato, margen, concepto, municipio, tarifaIC
   // Margen del 100 %: te quedas el contrato completo, no hay subcontrato.
   const sinProveedor = proveedorSubtotal === 0;
 
-  const comun = { concepto, municipio, tarifaICAManual };
+  const comun = { concepto, tarifaICAManual };
   const leg1 = calcular({
-    ...comun, subtotal: contrato,
+    ...comun, subtotal: contrato, municipio: municipioLeg1,
     ivaRate: agencia.responsableIVA ? ivaRate : 0,
     retenedor: clienteFinal, retenido: agencia,
   });
   const leg2 = calcular({
-    ...comun, subtotal: proveedorSubtotal,
+    ...comun, subtotal: proveedorSubtotal, municipio: municipioLeg2,
     ivaRate: proveedor.responsableIVA ? ivaRate : 0,
     retenedor: agencia, retenido: proveedor,
   });

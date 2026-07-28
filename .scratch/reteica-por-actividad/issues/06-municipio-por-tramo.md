@@ -21,10 +21,14 @@ fija (domicilio del suscriptor), móvil y datos (domicilio principal del usuario
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Cada tramo resuelve su municipio; el de la cadena es sólo el valor por defecto
-- [ ] Dos tramos en municipios distintos aplican cada uno su base mínima y su regla
-- [ ] Cambiar el municipio de un tramo no mueve el otro
-- [ ] Las excepciones de territorialidad no modeladas quedan anotadas
-- [ ] `npm test` en verde
+Hecho 2026-07-28. Con dos municipios en juego, el desplegable de actividades pasa
+a ser uno por parte: cada uno lista la tabla del municipio del tramo donde esa
+parte es retenida.
+
+- [x] Cada tramo resuelve su municipio; el de la cadena es sólo el valor por defecto
+- [x] Dos tramos en municipios distintos aplican cada uno su base mínima y su regla
+- [x] Cambiar el municipio de un tramo no mueve el otro
+- [x] Las excepciones de territorialidad no modeladas quedan anotadas
+- [x] `npm test` en verde

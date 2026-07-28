@@ -14,6 +14,9 @@ const liquidar = ent => calcularCadena({
   ...ent,
   concepto: CONCEPTOS.find(c => c.id === ent.conceptoId),
   municipio: MUNICIPIOS.find(m => m.id === ent.municipioId),
+  // El municipio de cada tramo, cuando el caso lo dice; si no, el de la cadena.
+  municipioLeg1: MUNICIPIOS.find(m => m.id === ent.municipioLeg1Id),
+  municipioLeg2: MUNICIPIOS.find(m => m.id === ent.municipioLeg2Id),
   clienteFinal: deriveProfile(ent.clienteFinal, ent.declarados?.clienteFinal),
   agencia: deriveProfile(ent.agencia, ent.declarados?.agencia),
   proveedor: deriveProfile(ent.proveedor, ent.declarados?.proveedor),
@@ -58,8 +61,17 @@ for (const caso of CADENA_CASOS) {
   });
 }
 
-test("los ocho casos de cadena siguen presentes", () => {
-  assert.equal(CADENA_CASOS.length, 8);
+test("los nueve casos de cadena siguen presentes", () => {
+  assert.equal(CADENA_CASOS.length, 9);
+});
+
+// El municipio es del tramo: moverlo en uno no puede mover el otro. Es la
+// garantía que hace segura la territorialidad por tramo.
+test("cambiar el municipio de un tramo no mueve el otro", () => {
+  const base = CADENA_CASOS.find(c => c.nombre === "Mockup — margen 20 %").ent;
+  const enBogota = liquidar(base);
+  const conTramo2Fuera = liquidar({ ...base, municipioLeg2Id: "otro", tarifaICAManual: 9 });
+  assert.deepEqual(conTramo2Fuera.leg1, enBogota.leg1);
 });
 
 // La tarifa dejó de ser un dato de la cadena: es del retenido de cada tramo. Si

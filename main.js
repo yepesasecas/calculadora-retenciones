@@ -47,8 +47,21 @@ const $ = id => document.getElementById(id);
 CONCEPTOS.forEach(c => $("concepto").add(new Option(c.nombre, c.id)));
 $("concepto").value = "serviciosGenerales";
 MUNICIPIOS.forEach(m => $("muni").add(new Option(m.nombre, m.id)));
+// Los dos tramos arrancan en el municipio de la cadena y sólo se separan si el
+// usuario lo dice: el caso corriente —todo en una ciudad— sigue siendo un campo.
+for (const id of ["muniT1", "muniT2"]) {
+  $(id).add(new Option("Igual al de la cadena", ""));
+  MUNICIPIOS.forEach(m => $(id).add(new Option(m.nombre, m.id)));
+}
 
-const municipioActual = () => MUNICIPIOS.find(m => m.id === $("muni").value);
+const municipioPorId = id => MUNICIPIOS.find(m => m.id === id);
+const municipioCadena = () => municipioPorId($("muni").value);
+const municipioLeg = n => municipioPorId($(`muniT${n}`).value) ?? municipioCadena();
+
+// A qué municipio mira la actividad de cada parte: a la del tramo donde esa parte
+// es retenida. El Cliente final nunca es retenido en esta cadena, así que se le
+// muestra la tabla de la cadena.
+const municipioDeParte = { cf: municipioCadena, ag: () => municipioLeg(1), pr: () => municipioLeg(2) };
 
 // La actividad se busca por código CIIU o por nombre. El desplegable nativo filtra
 // por subcadena sobre el valor de la opción, así que el valor lleva las dos cosas
@@ -57,9 +70,12 @@ const textoActividad = a =>
   `${a.nombre} — ${a.tarifaPorMil.toLocaleString("es-CO")} ‰` +
   (a.ciiu.length ? ` · CIIU ${a.ciiu.join(" ")}` : "");
 
+// Un desplegable por parte: cada uno lista la tabla del municipio de SU tramo,
+// que después del ticket 06 pueden ser dos ciudades distintas.
 function llenarActividades() {
-  $("actividadesICA").innerHTML = buscarActividades(municipioActual(), "")
-    .map(a => `<option value="${textoActividad(a)}"></option>`).join("");
+  for (const party of ["cf", "ag", "pr"])
+    $(`${party}Actividades`).innerHTML = buscarActividades(municipioDeParte[party](), "")
+      .map(a => `<option value="${textoActividad(a)}"></option>`).join("");
 }
 
 // ---- Entradas de responsabilidades del RUT ----
@@ -98,8 +114,9 @@ function initDeclarados(party) {
       `<input type="checkbox" data-hecho="${h.id}" data-party="${party}">` +
       `<span>${h.nombre}</span></label>`).join("") +
     `<span class="campo">Actividad ICA (CIIU o nombre)` +
-    `<input type="text" list="actividadesICA" data-actividad="${party}"` +
-    ` placeholder="No informada — tarifa máxima del municipio"></span>`;
+    `<input type="text" list="${party}Actividades" data-actividad="${party}"` +
+    ` placeholder="No informada — tarifa máxima del municipio">` +
+    `<datalist id="${party}Actividades"></datalist></span>`;
 }
 
 // La casilla guarda el texto de la opción; el id vive aparte. Sin coincidencia,
@@ -107,7 +124,7 @@ function initDeclarados(party) {
 // propia (tarifa máxima) y no un error de digitación.
 function leerActividad(party) {
   const texto = $(`${party}Declarados`).querySelector("[data-actividad]").value;
-  const a = buscarActividades(municipioActual(), "").find(x => textoActividad(x) === texto);
+  const a = buscarActividades(municipioDeParte[party](), "").find(x => textoActividad(x) === texto);
   return a ? a.id : null;
 }
 
@@ -151,7 +168,7 @@ llenarActividades();
 // actividades de servicios», que es el 9,66 de las seis facturas de referencia.
 // Es un valor por defecto, no un hecho fijo: se puede cambiar como cualquier otro.
 {
-  const demas = buscarActividades(municipioActual(), "7310")[0];
+  const demas = buscarActividades(municipioDeParte.ag(), "7310")[0];
   if (demas) $("agDeclarados").querySelector("[data-actividad]").value = textoActividad(demas);
 }
 
@@ -291,13 +308,14 @@ function render() {
     return;
   }
 
-  const municipio = MUNICIPIOS.find(m => m.id === $("muni").value);
+  const municipio = municipioCadena();
   // Tarifa compartida: cada leg decide si la aplica según SU retenido
   // (ver calcularCadena). No se fuerza a 0 según la Agencia — eso le anularía el
   // IVA al leg 2 aunque el Proveedor sí sea responsable.
   const ivaRate = Number($("ivaRate").value);
   const r = calcularCadena({
     contrato, margen: leerMargen(), concepto, municipio,
+    municipioLeg1: municipioLeg(1), municipioLeg2: municipioLeg(2),
     tarifaICAManual: Number($("icaTarifa").value) || 0, ivaRate,
     clienteFinal, agencia, proveedor,
   });
@@ -330,8 +348,9 @@ function render() {
   spec.innerHTML = specProveedor(r.leg2, ivaRate, tarifas2, r.sinProveedor);
 }
 
-// Cambiar de municipio cambia la tabla de actividades: se repuebla el desplegable.
-$("muni").addEventListener("change", () => { llenarActividades(); render(); });
+// Cambiar de municipio cambia la tabla de actividades: se repueblan los desplegables.
+["muni", "muniT1", "muniT2"].forEach(id =>
+  $(id).addEventListener("change", () => { llenarActividades(); render(); }));
 // Escribir la actividad reliquida, igual que un chip del RUT.
 $("form").addEventListener("input", e => { if (e.target.matches("[data-actividad]")) render(); });
 

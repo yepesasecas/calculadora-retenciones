@@ -225,4 +225,26 @@ export const CADENA_CASOS = [
       razones2: { reteica: null },
     },
   },
+  {
+    // Los dos tramos en municipios distintos: la campaña se vende en Bogotá y la
+    // ejecución se subcontrata fuera. Cada tramo aplica la regla y la base mínima
+    // de SU municipio — un umbral de otra ciudad podría apagar una retención que
+    // sí procede.
+    nombre: "Dos municipios — cada tramo con el suyo",
+    ent: {
+      contrato: 100000000, margen: { modo: "porcentaje", valor: 20 },
+      conceptoId: "serviciosGenerales", municipioId: "bogota", municipioLeg2Id: "otro",
+      tarifaICAManual: 9, ivaRate: 0.19,
+      clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "48", "07"], proveedor: ["05", "48"],
+      declarados: { agencia: ACTIVIDAD_AGENCIA },
+    },
+    esp: {
+      // Tramo 1 por la tabla de Bogotá (9,66); tramo 2 con la tarifa digitada,
+      // porque su municipio no tiene tabla cargada: 80.000.000 x 9/1000.
+      leg1: { reteica: 966000 },
+      leg2: { reteica: 720000 },
+      razones1: { reteica: null },
+      razones2: { reteica: null },
+    },
+  },
 ];

@@ -175,9 +175,14 @@
       </fieldset>
 
       <h2 class="paso">3 · Territorio e IVA</h2>
-      <label for="muni">Municipio (ReteICA)</label>
+      <label for="muni">Municipio de la cadena (ReteICA)</label>
       <select id="muni"></select>
-      <p class="hint">Donde se ejecuta la prestación (Ley 1819/2016 art. 343), no el domicilio de quien paga.</p>
+      <p class="hint">Donde se ejecuta la prestación (Ley 1819/2016 art. 343), no el domicilio de quien paga. Vale para los dos tramos salvo que se diga otra cosa abajo.</p>
+      <label for="muniT1">Municipio del tramo 1 (Cliente final → Matiz)</label>
+      <select id="muniT1"></select>
+      <label for="muniT2">Municipio del tramo 2 (Matiz → Proveedor)</label>
+      <select id="muniT2"></select>
+      <p class="hint">No modeladas las excepciones de territorialidad: transporte (municipio de despacho), TV e internet por suscripción y telefonía fija (domicilio del suscriptor), móvil y datos (domicilio principal del usuario).</p>
       <label for="icaTarifa">Tarifa ICA digitada (por mil)</label>
       <input type="number" id="icaTarifa" step="0.01" min="0" value="0">
       <p class="hint">Sólo se usa cuando el retenido no informa actividad. Si no figura en la tabla del municipio, se calcula y se avisa.</p>
@@ -201,8 +206,6 @@
       <div id="specProveedor"></div>
     </section>
   </form>
-
-  <datalist id="actividadesICA"></datalist>
 
   <details>
     <summary>Verificación — casos de cadena</summary>
