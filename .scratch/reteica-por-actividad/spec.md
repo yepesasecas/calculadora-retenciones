@@ -238,10 +238,22 @@ impuesto.
 Medellín y Cali **sí enuncian sus bases mínimas en UVT en el texto normativo**, a
 diferencia de Bogotá. No hay que desindexar nada.
 
-**Orden de ejecución.** Los hechos municipales por parte van primero, porque las
-compuertas y la regla del municipio dependen de ellos; la regla de retención antes
-que el municipio por tramo y que las tablas de Medellín y Cali; la base especial
-después de las compuertas. El detalle está en los siete tickets de este directorio.
+**Orden de ejecución.** Siete tickets en este directorio, cortados como rebanadas
+verticales y no por capas. El prefactor va primero y sin cambiar conducta, para que
+el reparto de compuertas se pruebe contra la suite intacta antes de que ninguna cifra
+se mueva:
+
+```
+02 razón por retención (prefactor, sin cambio de conducta)
+├── 03 correcciones normativas ── 08 base gravable especial
+└── 04 agente de ReteICA municipal
+    └── 05 regla de retención + actividad + tabla de Bogotá
+        └── 06 municipio por tramo
+            └── 07 Medellín, Cali y las exclusiones del municipio
+```
+
+El 08 no depende de nada municipal y puede tomarse en paralelo. El 07 es el que pone
+a prueba la abstracción del 05: si la forma de la regla está mal, ahí se rompe.
 
 ## Testing Decisions
 
