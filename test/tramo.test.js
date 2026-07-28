@@ -44,11 +44,22 @@ test("ReteIVA: el retenido no es responsable de IVA (49)", () => {
   assert.match(notasNoAplicaReteIVA(r)[0], /49/);
 });
 
-test("ReteIVA: el retenido es gran contribuyente (13)", () => {
-  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["05", "48", "13"] });
+// CAMBIO DE VALOR (ticket 03). Antes ReteIVA se apagaba porque el retenido fuera
+// gran contribuyente (13), que era una aproximación. La regla es el parágrafo del
+// art. 437-2: no hay retención entre agentes de retención de IVA. Los grandes
+// contribuyentes son agentes por el numeral 1, así que el caso corriente no
+// cambia — pero el que no lo sea sí recibe ReteIVA.
+test("ReteIVA: el retenido es a su vez agente de reteIVA (art. 437-2 par.)", () => {
+  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["05", "48", "13", "09"] });
   assert.equal(r.reteiva, 0);
   assert.equal(notasNoAplicaReteIVA(r).length, 1);
-  assert.match(notasNoAplicaReteIVA(r)[0], /13/);
+  assert.match(notasNoAplicaReteIVA(r)[0], /437-2/);
+});
+
+test("ReteIVA: un gran contribuyente que no es agente de reteIVA sí la recibe", () => {
+  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["05", "48", "13"] });
+  assert.ok(r.reteiva > 0);
+  assert.equal(r.detalle.reteiva.razon, null);
 });
 
 test("ReteIVA: la factura no lleva IVA", () => {
@@ -74,9 +85,10 @@ test("ReteIVA aplicada no produce razón", () => {
 // nota de ReteIVA siempre que ReteIVA no aplique, cualquiera sea el motivo.
 test("un retenedor que no retiene nada produce una nota por retención", () => {
   const r = leg({ retenedor: ["05", "48"], retenido: ["05", "48"] });
-  assert.equal(r.detalle.reteiva.razon, "el retenedor no es agente de retención (07)");
+  // Tras el ticket 03 ReteIVA ya no cae por el 07 sino por su propia compuerta.
+  assert.equal(r.detalle.reteiva.razon, "el retenedor no es agente de reteIVA (09/23)");
   assert.deepEqual(notasNoAplicaReteIVA(r),
-    ["ReteIVA: el retenedor no es agente de retención (07) — no aplica."]);
+    ["ReteIVA: el retenedor no es agente de reteIVA (09/23) — no aplica."]);
 });
 
 // La nota se deriva de la razón: si divergieran, la pantalla explicaría una cosa
@@ -89,4 +101,36 @@ test("cada retención que no aplica deja su propia nota, derivada de su razón",
     .map(([n, razon]) => `${n}: ${razon} — no aplica.`);
   assert.equal(noAplica.length, 3);
   assert.deepEqual(r.notas.filter(n => n.endsWith("— no aplica.")), noAplica);
+});
+
+// ---- Ticket 03: las tres correcciones normativas ----
+// Cada una mueve cifras que antes salían en cero. Ver ADR-0005 y
+// `docs/retencion-ica.md` §4.
+
+// Art. 911 ET: el SIMPLE excluye retefuente e ICA «sin perjuicio de la retención
+// a título de IVA, regulada en el numeral 9 del art. 437-2» (DIAN Of. 901166/2022).
+test("SIMPLE: un retenido del SIMPLE responsable de IVA sí recibe ReteIVA", () => {
+  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["47", "48"] });
+  assert.ok(r.reteiva > 0);
+  assert.equal(r.detalle.reteiva.razon, null);
+});
+
+test("SIMPLE: sigue sin recibir retefuente ni ReteICA", () => {
+  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["47", "48"] });
+  assert.equal(r.retefuente, 0);
+  assert.equal(r.reteica, 0);
+  assert.equal(r.detalle.retefuente.razon, "el retenido está en régimen simple (47)");
+  assert.equal(r.detalle.reteica.razon, "el retenido está en régimen simple (47)");
+});
+
+// El código 15 es figura nacional de renta: no alcanza al ICA, que es municipal,
+// ni al IVA, cuyo art. 437-2 no lo menciona.
+test("autorretenedor (15): sólo se libra de retefuente", () => {
+  const r = leg({ retenedor: ["05", "48", "07", "09"], retenido: ["05", "48", "15"] });
+  assert.equal(r.retefuente, 0);
+  assert.equal(r.detalle.retefuente.razon, "el retenido es autorretenedor (15)");
+  assert.ok(r.reteica > 0);
+  assert.ok(r.reteiva > 0);
+  assert.equal(r.detalle.reteica.razon, null);
+  assert.equal(r.detalle.reteiva.razon, null);
 });

@@ -21,13 +21,19 @@ commit dice cuáles y por qué. Las seis facturas de referencia **no** deben mov
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Un retenido SIMPLE responsable de IVA recibe ReteIVA
-- [ ] Un retenido SIMPLE sigue sin recibir retefuente ni ReteICA
-- [ ] Un retenido autorretenedor (15) recibe ReteICA y ReteIVA, y no retefuente
-- [ ] ReteIVA se apaga cuando el retenido es agente de reteIVA, no cuando es gran contribuyente
-- [ ] Un retenido gran contribuyente que **no** es agente de reteIVA sí recibe ReteIVA
-- [ ] Las seis facturas de referencia dan lo mismo que antes
-- [ ] Las fixtures que cambian de valor lo hacen en este commit, con su razón anotada
-- [ ] `npm test` en verde
+Hecho 2026-07-28. Fixtures movidas: los casos 1 y 2 (razón de ReteIVA del tramo 2,
+que ya no cae por el SIMPLE) y los casos 3 y 5 (ReteIVA del tramo 1 en cero, porque
+la Agencia lleva el código 09 y el art. 437-2 par. la exime). Se añadió
+`fixtures/facturas.js` + `test/facturas.test.js`: las seis facturas de referencia
+pasan a estar fijadas por prueba, no sólo por documento.
+
+- [x] Un retenido SIMPLE responsable de IVA recibe ReteIVA
+- [x] Un retenido SIMPLE sigue sin recibir retefuente ni ReteICA
+- [x] Un retenido autorretenedor (15) recibe ReteICA y ReteIVA, y no retefuente
+- [x] ReteIVA se apaga cuando el retenido es agente de reteIVA, no cuando es gran contribuyente
+- [x] Un retenido gran contribuyente que **no** es agente de reteIVA sí recibe ReteIVA
+- [x] Las seis facturas de referencia dan lo mismo que antes
+- [x] Las fixtures que cambian de valor lo hacen en este commit, con su razón anotada
+- [x] `npm test` en verde

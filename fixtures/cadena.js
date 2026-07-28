@@ -24,7 +24,9 @@ export const CADENA_CASOS = [
         iva: "el retenido no es responsable de IVA (49)",
         retefuente: "el retenido está en régimen simple (47)",
         reteica: "el retenido está en régimen simple (47)",
-        reteiva: "el retenido está en régimen simple (47)",
+        // CAMBIO (ticket 03): antes el SIMPLE apagaba también ReteIVA. Ya no: cae
+        // por su propia compuerta, que aquí es que la Agencia no es agente 09/23.
+        reteiva: "el retenedor no es agente de reteIVA (09/23)",
       },
       razones1: { iva: null, retefuente: null, reteica: null, reteiva: null },
     },
@@ -48,7 +50,9 @@ export const CADENA_CASOS = [
         iva: "el retenido no es responsable de IVA (49)",
         retefuente: "el retenido está en régimen simple (47)",
         reteica: "el retenido está en régimen simple (47)",
-        reteiva: "el retenido está en régimen simple (47)",
+        // CAMBIO (ticket 03): antes el SIMPLE apagaba también ReteIVA. Ya no: cae
+        // por su propia compuerta, que aquí es que la Agencia no es agente 09/23.
+        reteiva: "el retenedor no es agente de reteIVA (09/23)",
       },
     },
   },
@@ -64,12 +68,15 @@ export const CADENA_CASOS = [
     },
     esp: {
       proveedorSubtotal: 80000000, ganancia: 20000000, sinProveedor: false,
+      // CAMBIO (ticket 03): aquí la Agencia lleva el código 09, así que es a su vez
+      // agente de reteIVA y el art. 437-2 par. le quita la ReteIVA del tramo 1
+      // (antes 2.850.000). El tramo 2 no se mueve: el Proveedor no es agente.
       leg1: { subtotal: 100000000, iva: 19000000, neto: 119000000,
-              retefuente: 4000000, reteica: 966000, reteiva: 2850000, totalAGirar: 111184000 },
+              retefuente: 4000000, reteica: 966000, reteiva: 0, totalAGirar: 114034000 },
       leg2: { subtotal: 80000000, iva: 15200000, neto: 95200000,
               retefuente: 3200000, reteica: 772800, reteiva: 2280000, totalAGirar: 88947200 },
-      // Ninguna retención cae: ambos tramos retienen todo lo que pueden.
-      razones1: { iva: null, retefuente: null, reteica: null, reteiva: null },
+      razones1: { iva: null, retefuente: null, reteica: null,
+                  reteiva: "el retenido es a su vez agente de reteIVA (art. 437-2 par.)" },
       razones2: { iva: null, retefuente: null, reteica: null, reteiva: null },
     },
   },
@@ -110,13 +117,15 @@ export const CADENA_CASOS = [
     },
     esp: {
       proveedorSubtotal: 80000,
-      leg1: { subtotal: 100000, retefuente: 0, reteica: 0, reteiva: 2850, totalAGirar: 116150 },
+      // La Agencia es agente de reteIVA (09): el art. 437-2 par. le quita la ReteIVA
+      // del tramo 1, que antes era 2.850. El tramo 2 la conserva.
+      leg1: { subtotal: 100000, retefuente: 0, reteica: 0, reteiva: 0, totalAGirar: 119000 },
       leg2: { subtotal: 80000, retefuente: 0, reteica: 0, reteiva: 2280, totalAGirar: 92920 },
       razones1: {
         iva: null,
         retefuente: "base mínima del concepto: $105.000",
         reteica: "base mínima municipal: $209.496",
-        reteiva: null,
+        reteiva: "el retenido es a su vez agente de reteIVA (art. 437-2 par.)",
       },
       razones2: {
         iva: null,
