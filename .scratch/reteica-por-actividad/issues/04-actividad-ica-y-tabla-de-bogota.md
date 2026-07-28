@@ -52,6 +52,12 @@ normativo.
 La actividad ICA **no es** el `concepto` de retefuente y no debe derivarse de él.
 `icaClase` sigue existiendo, pero sólo elige la base mínima.
 
+**Costura de prueba nueva.** La resolución de la tarifa se expone como función pura
+—municipio + retenido ⇒ tarifa y de dónde salió— para poder fijarla sin construir un
+tramo entero: tabla de Bogotá, respaldo a tarifa máxima, tarifa plana de Medellín y
+aviso de tarifa fuera de tabla. Es el **único seam nuevo** de todo el spec; el resto
+de la conducta se sigue afirmando en `calcular` y `calcularCadena`.
+
 **Blocked by:** 02
 
 **Status:** ready-for-agent
