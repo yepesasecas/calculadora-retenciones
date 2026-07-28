@@ -144,6 +144,12 @@ export const CADENA_CASOS = [
       contrato: 10000000, margen: { modo: "porcentaje", valor: 20 },
       conceptoId: "serviciosGenerales", municipioId: "bogota", icaTarifaPorMil: 9.66, ivaRate: 0.19,
       clienteFinal: ["05", "48", "07", "09"], agencia: ["05", "49", "07", "09"], proveedor: ["05", "48"],
+      // La Agencia no es responsable de IVA, así que `agenteReteICA` arrancaría
+      // apagado (su valor por defecto). Aquí se declara encendido: la calidad la
+      // confiere el municipio por resolución y no depende del IVA. Sin esto el
+      // tramo 2 no tendría ReteICA y el caso dejaría de hablar del IVA, que es
+      // lo que vino a fijar.
+      declarados: { agencia: { agenteReteICA: true } },
     },
     esp: {
       leg1: { subtotal: 10000000, iva: 0, neto: 10000000,

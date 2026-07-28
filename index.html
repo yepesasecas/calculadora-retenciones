@@ -69,6 +69,12 @@
     border: 1px solid var(--ink); font-weight: 700;
   }
   .codeGrid input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* Los hechos municipales se declaran a mano: van separados de los códigos del
+     RUT por una línea y un rótulo, porque de ellos responde el usuario y no la DIAN. */
+  .declarados { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 8px; }
+  .declarados .rotulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+  .declarados label { display: flex; gap: 6px; align-items: baseline; margin: 5px 0 0; font-size: .8rem; color: var(--ink); cursor: pointer; }
+  .declarados label input { flex: 0 0 auto; margin: 0; }
   .derived { font-size: .78rem; color: var(--muted); margin-top: 8px; border-top: 1px dashed var(--line); padding-top: 6px; }
   .derived .on { color: var(--ok); font-weight: 600; }
   .derived .alert { color: var(--warn-ink); background: var(--warn-bg); border-radius: 5px; padding: 3px 7px; margin-top: 4px; }
@@ -144,8 +150,9 @@
       <h2 class="paso">2 · Códigos del RUT</h2>
       <fieldset>
         <legend>Cliente final (te contrata y te retiene)</legend>
-        <p class="hint">Responsabilidades del RUT (casilla 53). Sin agente de retefuente (07) no te practica retenciones.</p>
+        <p class="hint">Responsabilidades del RUT (casilla 53). Sin el 07 no te practica retefuente; la ReteICA depende del hecho municipal, no del RUT.</p>
         <div class="codeGrid" id="cfRelevant"></div>
+        <div class="declarados" id="cfDeclarados"></div>
         <div class="derived" id="cfDerived"></div>
       </fieldset>
 
@@ -153,13 +160,15 @@
         <legend>Matiz — tú <span class="yo">TÚ</span></legend>
         <p class="hint">Tu RUT. Te retienen y retienes: define el IVA que facturas al Cliente y si puedes retenerle al Proveedor.</p>
         <div class="codeGrid" id="agRelevant"></div>
+        <div class="declarados" id="agDeclarados"></div>
         <div class="derived" id="agDerived"></div>
       </fieldset>
 
       <fieldset>
         <legend>Proveedor (lo subcontratas y le retienes)</legend>
-        <p class="hint">RUT del proveedor. Régimen simple (47) y no responsable de IVA (49) cambian el tramo 2.</p>
+        <p class="hint">RUT del proveedor. El régimen simple (47) le quita retefuente y ReteICA, no la ReteIVA (art. 911 ET).</p>
         <div class="codeGrid" id="prRelevant"></div>
+        <div class="declarados" id="prDeclarados"></div>
         <div class="derived" id="prDerived"></div>
       </fieldset>
 

@@ -1,7 +1,7 @@
 import { CONCEPTOS } from "./datos/conceptos.js";
 import { MUNICIPIOS } from "./datos/municipios.js";
 import { COD, esRelevante } from "./datos/responsabilidades.js";
-import { deriveProfile } from "./dominio/perfil.js";
+import { deriveProfile, HECHOS_MUNICIPALES } from "./dominio/perfil.js";
 import { RETEIVA_TARIFA } from "./dominio/tramo.js";
 import { calcularCadena } from "./dominio/cadena.js";
 import { CADENA_CASOS } from "./fixtures/cadena.js";
@@ -16,9 +16,9 @@ function runCadena() {
       ...c.ent,
       concepto: CONCEPTOS.find(x => x.id === c.ent.conceptoId),
       municipio: MUNICIPIOS.find(x => x.id === c.ent.municipioId),
-      clienteFinal: deriveProfile(c.ent.clienteFinal),
-      agencia: deriveProfile(c.ent.agencia),
-      proveedor: deriveProfile(c.ent.proveedor),
+      clienteFinal: deriveProfile(c.ent.clienteFinal, c.ent.declarados?.clienteFinal),
+      agencia: deriveProfile(c.ent.agencia, c.ent.declarados?.agencia),
+      proveedor: deriveProfile(c.ent.proveedor, c.ent.declarados?.proveedor),
     });
     const propios = ["leg1", "leg2", "razones1", "razones2"];
     const lineas = [
@@ -70,6 +70,26 @@ function initParty(party, defaults) {
   CHIPS.forEach(r => rel.appendChild(chip(party, r, defaults.includes(r.code))));
 }
 
+// Los hechos municipales que el usuario ha tocado. Vacío = tomar el valor por
+// defecto que calcula el perfil, que puede moverse al cambiar los códigos del RUT.
+const declarados = { cf: {}, ag: {}, pr: {} };
+
+function initDeclarados(party) {
+  $(`${party}Declarados`).innerHTML =
+    `<div class="rotulo">Lo declaras tú · no sale del RUT</div>` +
+    HECHOS_MUNICIPALES.map(h =>
+      `<label title="${h.ayuda}">` +
+      `<input type="checkbox" data-hecho="${h.id}" data-party="${party}">` +
+      `<span>${h.nombre}</span></label>`).join("");
+}
+
+// La casilla muestra siempre el valor vigente —el declarado, o el que trae por
+// defecto—, para que no pueda decir una cosa mientras el motor usa otra.
+function syncDeclarados(party, prof) {
+  for (const h of HECHOS_MUNICIPALES)
+    $(`${party}Declarados`).querySelector(`[data-hecho="${h.id}"]`).checked = prof[h.id];
+}
+
 function readCodes(party) {
   return [...document.querySelectorAll(`#${party}Relevant [data-code]:checked`)]
     .map(el => el.dataset.code);
@@ -97,6 +117,7 @@ function renderDerived(party, prof) {
 initParty("cf", ["05", "48", "07", "09"]);
 initParty("ag", ["05", "48", "07"]);
 initParty("pr", ["47", "49"]);
+["cf", "ag", "pr"].forEach(initDeclarados);
 
 function leerMonto(id) {
   const raw = $(id).value.replace(/[.\s]/g, "").replace(",", ".");
@@ -212,12 +233,13 @@ function render() {
   $("trapNote").hidden = !concepto.trap;
   if (concepto.trap) $("trapNote").textContent = "⚠ " + concepto.trap;
 
-  const clienteFinal = deriveProfile(readCodes("cf"));
-  const agencia      = deriveProfile(readCodes("ag"));
-  const proveedor    = deriveProfile(readCodes("pr"));
-  renderDerived("cf", clienteFinal);
-  renderDerived("ag", agencia);
-  renderDerived("pr", proveedor);
+  const clienteFinal = deriveProfile(readCodes("cf"), declarados.cf);
+  const agencia      = deriveProfile(readCodes("ag"), declarados.ag);
+  const proveedor    = deriveProfile(readCodes("pr"), declarados.pr);
+  for (const [party, prof] of [["cf", clienteFinal], ["ag", agencia], ["pr", proveedor]]) {
+    syncDeclarados(party, prof);
+    renderDerived(party, prof);
+  }
 
 
   const contrato = leerMonto("contrato");
@@ -274,6 +296,12 @@ $("muni").addEventListener("change", () => {
 
 // Delegación: cualquier chip de código que cambie reliquida la cadena.
 $("form").addEventListener("change", e => { if (e.target.matches("[data-code]")) render(); });
+// Un hecho municipal tocado deja de tomar su valor por defecto: pasa a ser declarado.
+$("form").addEventListener("change", e => {
+  if (!e.target.matches("[data-hecho]")) return;
+  declarados[e.target.dataset.party][e.target.dataset.hecho] = e.target.checked;
+  render();
+});
 // El toggle % / $ fijo intercambia cuál de los dos controles de margen se ve.
 $("margenModo").addEventListener("change", () => {
   const fijo = $("margenModo").value === "fijo";

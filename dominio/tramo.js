@@ -26,11 +26,13 @@ function razonRetefuente({ retenedor, retenido, subtotal, concepto }) {
   return null;
 }
 
-// ReteICA es municipal. El autorretenedor (15) NO la excluye: es figura nacional
-// de renta, y la autorretención de ICA la confiere el municipio por resolución
-// propia. El SIMPLE sí, porque el art. 911 ET consolida el ICA dentro del SIMPLE.
+// ReteICA es municipal, y lo es en las dos puntas: la calidad de agente la
+// confiere el municipio por resolución —no el código 07 del RUT nacional— y la
+// autorretención de ICA también. El autorretenedor de renta (15) NO la excluye.
+// El SIMPLE sí, porque el art. 911 ET consolida el ICA dentro del SIMPLE.
 function razonReteica({ retenedor, retenido, subtotal, baseICA }) {
-  if (!retenedor.agenteRetefuente) return NO_AGENTE_07;
+  if (!retenedor.agenteReteICA)    return "el retenedor no es agente de retención de ICA en el municipio";
+  if (retenido.autorretenedorICA)  return "el retenido es autorretenedor de ICA (resolución municipal)";
   if (retenido.simple)             return REGIMEN_SIMPLE;
   if (baseICA > 0 && subtotal < baseICA)
     return `base mínima municipal: $${fmt(baseICA)}`;

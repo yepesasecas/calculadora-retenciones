@@ -1,9 +1,26 @@
 import { COD } from "../datos/responsabilidades.js";
 
-// Deriva el perfil fiscal a partir de los códigos del RUT de una parte.
+// Los hechos que **no** están en el RUT y que el usuario declara. Son municipales:
+// el RUT es nacional y no puede contenerlos (enmienda de ADR-0001).
+//
+// `porDefecto` recibe el perfil ya derivado del RUT y devuelve el valor inicial,
+// que el usuario puede cambiar. Ser responsable de IVA es el proxy del régimen
+// común de ICA, al que Bogotá designó agente retenedor en bloque por resolución
+// (DDI-052377/2016, DDI-000305/2020).
+export const HECHOS_MUNICIPALES = [
+  { id: "agenteReteICA", nombre: "Agente de retención de ICA",
+    ayuda: "Lo confiere el municipio por resolución. En Bogotá alcanza a todo el régimen común de ICA.",
+    porDefecto: p => p.responsableIVA },
+  { id: "autorretenedorICA", nombre: "Autorretenedor de ICA",
+    ayuda: "Habilitado por resolución municipal a retenerse a sí mismo: nadie le practica ReteICA. Distinto del código 15, que es de renta.",
+    porDefecto: () => false },
+];
+
+// Deriva el perfil fiscal de una parte: los códigos del RUT (casilla 53) más los
+// hechos municipales que el usuario declara y que ningún código nacional implica.
 // `simple` (código 47) es relevante pero no es un flag de perfil: lo tratamos
 // aparte en `calcular`. Devuelve flags + alerts (contradicciones / salvedades).
-export function deriveProfile(codes) {
+export function deriveProfile(codes, declarados = {}) {
   const implied = new Set(codes.flatMap(c => (COD[c] ? COD[c].implies : [])));
   const profile = {
     responsableIVA:   implied.has("responsableIVA"),
@@ -21,5 +38,11 @@ export function deriveProfile(codes) {
   if (implied.has("responsableIVA") && implied.has("noResponsableIVA"))
     alerts.push("Responsable (48/11) y no responsable (49/53/12) de IVA a la vez — RUT contradictorio.");
   if (implied.has("noResponsableIVA")) profile.responsableIVA = false;
+
+  // Los hechos declarados van después, para que sus valores por defecto lean el
+  // perfil del RUT ya corregido.
+  for (const h of HECHOS_MUNICIPALES)
+    profile[h.id] = declarados[h.id] ?? h.porDefecto(profile);
+
   return { ...profile, alerts };
 }

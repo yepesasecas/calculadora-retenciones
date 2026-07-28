@@ -7,14 +7,16 @@ import { CONCEPTOS } from "../datos/conceptos.js";
 import { MUNICIPIOS } from "../datos/municipios.js";
 import { CADENA_CASOS } from "../fixtures/cadena.js";
 
-// Los casos guardan códigos del RUT, no perfiles: así ejercitan la derivación real.
+// Los casos guardan códigos del RUT y hechos declarados, no perfiles ya
+// derivados: así ejercitan la derivación real, incluidos los valores por defecto
+// de los hechos municipales.
 const liquidar = ent => calcularCadena({
   ...ent,
   concepto: CONCEPTOS.find(c => c.id === ent.conceptoId),
   municipio: MUNICIPIOS.find(m => m.id === ent.municipioId),
-  clienteFinal: deriveProfile(ent.clienteFinal),
-  agencia: deriveProfile(ent.agencia),
-  proveedor: deriveProfile(ent.proveedor),
+  clienteFinal: deriveProfile(ent.clienteFinal, ent.declarados?.clienteFinal),
+  agencia: deriveProfile(ent.agencia, ent.declarados?.agencia),
+  proveedor: deriveProfile(ent.proveedor, ent.declarados?.proveedor),
 });
 
 // Cada caso afirma un subconjunto distinto: el reparto del contrato, las cifras de

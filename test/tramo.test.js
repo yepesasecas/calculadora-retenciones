@@ -94,7 +94,9 @@ test("un retenedor que no retiene nada produce una nota por retención", () => {
 // La nota se deriva de la razón: si divergieran, la pantalla explicaría una cosa
 // y el motor habría hecho otra. Es la garantía que sostiene ADR-0004.
 test("cada retención que no aplica deja su propia nota, derivada de su razón", () => {
-  const r = leg({ retenedor: ["05", "48"], retenido: ["05", "48"] });
+  // Un retenedor sin ninguna calidad: no retiene nada, y cada retención cae por
+  // su propia razón — 07, la designación municipal y 09/23, tres autoridades.
+  const r = leg({ retenedor: ["05", "49"], retenido: ["05", "48"] });
   const noAplica = ["Retefuente", "ReteICA", "ReteIVA"]
     .map(n => [n, r.detalle[n.toLowerCase()].razon])
     .filter(([, razon]) => razon)
@@ -133,4 +135,55 @@ test("autorretenedor (15): sólo se libra de retefuente", () => {
   assert.ok(r.reteiva > 0);
   assert.equal(r.detalle.reteica.razon, null);
   assert.equal(r.detalle.reteiva.razon, null);
+});
+
+// ---- Ticket 04: la ReteICA responde a un agente municipal ----
+
+const legDeclarando = ({ retenedor, retenido, declRetenedor = {}, declRetenido = {} }) => calcular({
+  subtotal: 10_000_000,
+  concepto: SERVICIOS,
+  ivaRate: 0.19,
+  retenido: deriveProfile(retenido, declRetenido),
+  retenedor: deriveProfile(retenedor, declRetenedor),
+  municipio: BOGOTA,
+  icaTarifaPorMil: BOGOTA.tarifaPorMil,
+});
+
+// Bogotá designa agente retenedor de ICA a todo el régimen común por resolución
+// (DDI-052377/2016): un cliente sin código 07 practica ReteICA y no retefuente.
+test("agente de ReteICA: sin código 07 practica ReteICA pero no retefuente", () => {
+  const r = legDeclarando({ retenedor: ["05", "48"], retenido: ["05", "48"] });
+  assert.ok(r.reteica > 0);
+  assert.equal(r.detalle.reteica.razon, null);
+  assert.equal(r.retefuente, 0);
+  assert.equal(r.detalle.retefuente.razon, "el retenedor no es agente de retención (07)");
+});
+
+test("agente de ReteICA: se puede desmarcar, y sólo cae la ReteICA", () => {
+  const r = legDeclarando({
+    retenedor: ["05", "48", "07", "09"], retenido: ["05", "48"],
+    declRetenedor: { agenteReteICA: false },
+  });
+  assert.equal(r.reteica, 0);
+  assert.equal(r.detalle.reteica.razon, "el retenedor no es agente de retención de ICA en el municipio");
+  assert.ok(r.retefuente > 0);
+  assert.ok(r.reteiva > 0);
+});
+
+test("agente de ReteICA: arranca en el valor de responsable de IVA", () => {
+  assert.equal(deriveProfile(["05", "48"]).agenteReteICA, true);
+  assert.equal(deriveProfile(["05", "49"]).agenteReteICA, false);
+  assert.equal(deriveProfile(["05", "49"], { agenteReteICA: true }).agenteReteICA, true);
+});
+
+// La autorretención de ICA es municipal y sólo apaga la ReteICA: no es el código 15.
+test("autorretenedor de ICA: no recibe ReteICA, y sí las demás", () => {
+  const r = legDeclarando({
+    retenedor: ["05", "48", "07", "09"], retenido: ["05", "48"],
+    declRetenido: { autorretenedorICA: true },
+  });
+  assert.equal(r.reteica, 0);
+  assert.equal(r.detalle.reteica.razon, "el retenido es autorretenedor de ICA (resolución municipal)");
+  assert.ok(r.retefuente > 0);
+  assert.ok(r.reteiva > 0);
 });

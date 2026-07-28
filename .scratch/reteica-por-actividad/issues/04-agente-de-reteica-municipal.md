@@ -25,12 +25,19 @@ del tramo 1 con su propia razón, sin que retefuente ni ReteIVA se muevan.
 
 **Blocked by:** 02
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] El perfil de cada parte transporta los dos hechos nuevos
-- [ ] `agenteReteICA` arranca en el valor de responsable de IVA y se puede desmarcar
-- [ ] Un retenedor sin código 07 pero agente de ReteICA practica ReteICA y no retefuente
-- [ ] Un retenido autorretenedor de ICA no recibe ReteICA, y sí las demás
-- [ ] La UI distingue lo declarado a mano de lo derivado del RUT
-- [ ] El dominio y los datos no importan de la vista ni del formateador (ADR-0003)
-- [ ] `npm test` en verde
+Hecho 2026-07-28. Los hechos declarados entran por un canal propio
+(`HECHOS_MUNICIPALES` en `dominio/perfil.js`), que los tickets 07 y 08 amplían sin
+tocar la derivación del RUT. Fixture movida: el caso «Agencia sin IVA» declara
+`agenteReteICA: true`, porque su Agencia no es responsable de IVA y el valor por
+defecto le habría quitado la ReteICA del tramo 2 — que no es de lo que habla ese
+caso.
+
+- [x] El perfil de cada parte transporta los dos hechos nuevos
+- [x] `agenteReteICA` arranca en el valor de responsable de IVA y se puede desmarcar
+- [x] Un retenedor sin código 07 pero agente de ReteICA practica ReteICA y no retefuente
+- [x] Un retenido autorretenedor de ICA no recibe ReteICA, y sí las demás
+- [x] La UI distingue lo declarado a mano de lo derivado del RUT
+- [x] El dominio y los datos no importan de la vista ni del formateador (ADR-0003)
+- [x] `npm test` en verde
