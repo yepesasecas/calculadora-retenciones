@@ -1,6 +1,29 @@
 # ADR-0001 — Fiscal profile derived from RUT responsabilidades
 
-Status: Accepted (2026-07-24)
+Status: Accepted (2026-07-24), amended (2026-07-28)
+
+## Amendment (2026-07-28) — the profile is RUT-derived *plus municipal facts*
+
+Decision 1 said the profile is derived from casilla 53. That holds for renta and
+IVA, and **cannot** hold for ICA: ICA is municipal, and the facts that govern it
+are conferred by municipal resolution, not by any national code. Bogotá designates
+its ReteICA agents by resolution (DDI-052377/2016, DDI-000305/2020) — reaching all
+régimen-común ICA taxpayers, so a party with no código 07 is routinely a ReteICA
+agent. Likewise autorretención de ICA is a municipal qualification, unrelated to
+código 15.
+
+So three facts are now entered directly rather than derived: **agente de ReteICA**
+(defaulted from responsable de IVA, a proxy for régimen común), **autorretenedor de
+ICA**, and **declarante de ICA en el municipio**. Decision 2 is narrowed
+accordingly: códigos 07 and 09/23 govern retefuente and ReteIVA only.
+
+Decision 3 is corrected on one point. SIMPLE is not subject to retefuente nor
+ReteICA, as stated — but it **is** subject to ReteIVA: art. 911 ET excludes
+retention "sin perjuicio de la retención… a título de IVA, regulada en el numeral 9
+del art. 437-2" (DIAN Oficio 901166 de 2022). This resolves the "ReteIVA behaviour
+under SIMPLE" item left flagged under Consequences. See
+[`docs/retencion-ica.md`](../retencion-ica.md) and
+[ADR-0005](./0005-per-retencion-gating.md).
 
 ## Context
 
