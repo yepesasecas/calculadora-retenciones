@@ -119,8 +119,13 @@ const declarados = { cf: {}, ag: {}, pr: {} };
 // cifra. Preguntar lo que no se usa invita a creer que se usó.
 const ES_RETENIDO = { cf: false, ag: true, pr: true };
 
+// Al Cliente final nunca se le retiene: sus hechos del lado retenido no se
+// pintan. `syncDeclarados` recorre esta misma lista, no la tabla completa.
+const hechosDe = party =>
+  HECHOS_MUNICIPALES.filter(h => h.lado === "retenedor" || ES_RETENIDO[party]);
+
 function initDeclarados(party) {
-  const hechos = HECHOS_MUNICIPALES.filter(h => h.lado === "retenedor" || ES_RETENIDO[party]);
+  const hechos = hechosDe(party);
   $(`${party}Declarados`).innerHTML =
     `<div class="rotulo">Lo declaras tú · no sale del RUT</div>` +
     hechos.map(h =>
@@ -149,7 +154,7 @@ function leerActividad(party) {
 // La casilla muestra siempre el valor vigente —el declarado, o el que trae por
 // defecto—, para que no pueda decir una cosa mientras el motor usa otra.
 function syncDeclarados(party, prof) {
-  for (const h of HECHOS_MUNICIPALES)
+  for (const h of hechosDe(party))
     $(`${party}Declarados`).querySelector(`[data-hecho="${h.id}"]`).checked = prof[h.id];
 }
 
