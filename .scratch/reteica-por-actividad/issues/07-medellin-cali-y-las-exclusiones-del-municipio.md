@@ -37,13 +37,25 @@ real, ese es el primer sitio donde mirar.
 
 **Blocked by:** 06
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Medellín retiene 1,8 por mil sea cual sea la actividad del retenido
-- [ ] En Medellín no se pregunta la actividad ni se dispara el aviso de «no informada»
-- [ ] Cali retiene a la tarifa de la actividad, y a la máxima si no se informa
-- [ ] La base mínima única de Medellín no se modela como el par compras/servicios
-- [ ] Un gran contribuyente declarante queda excluido en Bogotá y Cali, y no en Medellín
-- [ ] Cada tarifa y cada base cita el acuerdo y el artículo que la fija
-- [ ] Ninguna cifra proviene de un blog de proveedor
-- [ ] `npm test` en verde
+Hecho 2026-07-28. La abstracción del ticket 05 aguantó: Medellín entró como un
+`{ tipo: "plana" }` sin tocar el motor, y la exclusión del gran contribuyente
+declarante cupo en la regla del municipio. De Cali **sólo se transcribieron las
+filas verificadas**: los tramos de servicios en 2,2 / 3,3 / 6,6 / 8,8 sólo se
+publican en la Res. 0119/2020, escaneada y sin capa de texto, así que quedan
+fuera con su razón anotada en `datos/ica-cali.js` — una actividad de esos tramos
+se digita a mano y la calculadora avisa.
+
+Añadido de paso: una actividad informada que no figura en la tabla del municipio
+del tramo produce un aviso propio, distinto del de «no informada». Sin dos tablas
+cargadas ese caso no existía.
+
+- [x] Medellín retiene 1,8 por mil sea cual sea la actividad del retenido
+- [x] En Medellín no se pregunta la actividad ni se dispara el aviso de «no informada»
+- [x] Cali retiene a la tarifa de la actividad, y a la máxima si no se informa
+- [x] La base mínima única de Medellín no se modela como el par compras/servicios
+- [x] Un gran contribuyente declarante queda excluido en Bogotá y Cali, y no en Medellín
+- [x] Cada tarifa y cada base cita el acuerdo y el artículo que la fija
+- [x] Ninguna cifra proviene de un blog de proveedor
+- [x] `npm test` en verde

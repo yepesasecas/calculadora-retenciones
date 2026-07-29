@@ -50,6 +50,15 @@ export function resolverTarifaICA({ municipio, retenido = {}, tarifaManual = 0 }
     aviso: null,
   };
 
+  // La actividad es de la parte y las tablas son de cada municipio: una parte
+  // puede traer una actividad de otra ciudad. No es lo mismo que no informarla,
+  // así que el aviso lo dice con sus palabras.
+  if (retenido.actividadICA) return {
+    tarifaPorMil: regla.maxima,
+    fuente: `${municipio.nombre}: tarifa máxima — ${regla.normaMaxima}`,
+    aviso: `la actividad informada del retenido no figura en la tabla de ${municipio.nombre} — se aplicó la tarifa máxima (${fmt(regla.maxima)} x 1000). Elija la actividad en la tabla de ese municipio.`,
+  };
+
   // Actividad no informada, pero con tarifa digitada: se calcula con ella y se
   // avisa si no figura en la tabla del municipio. Es el aviso que habría cazado
   // el 8,99 el primer día.

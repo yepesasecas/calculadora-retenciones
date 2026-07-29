@@ -32,10 +32,16 @@ function razonRetefuente({ retenedor, retenido, subtotal, concepto }) {
 // confiere el municipio por resolución —no el código 07 del RUT nacional— y la
 // autorretención de ICA también. El autorretenedor de renta (15) NO la excluye.
 // El SIMPLE sí, porque el art. 911 ET consolida el ICA dentro del SIMPLE.
-function razonReteica({ retenedor, retenido, subtotal, baseICA }) {
+function razonReteica({ retenedor, retenido, subtotal, baseICA, municipio }) {
   if (!retenedor.agenteReteICA)    return "el retenedor no es agente de retención de ICA en el municipio";
   if (retenido.autorretenedorICA)  return "el retenido es autorretenedor de ICA (resolución municipal)";
   if (retenido.simple)             return REGIMEN_SIMPLE;
+  // Las demás exclusiones son del municipio y viajan en su regla: Bogotá y Cali
+  // eximen al gran contribuyente que declara ICA allí, Medellín no exime a nadie
+  // por ese hecho [Ac. 093/2023 art. 82].
+  if (municipio.regla?.excluyeGranContribuyenteDeclarante
+      && retenido.granContribuyente && retenido.declaranteICAMunicipio)
+    return "el retenido es gran contribuyente declarante de ICA en el municipio";
   if (baseICA > 0 && subtotal < baseICA)
     return `base mínima municipal: $${fmt(baseICA)}`;
   return null;
@@ -76,7 +82,7 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
   // `razon` no nula = la retención no aplica, y dice por qué.
   const razones = {
     retefuente: razonRetefuente({ retenedor, retenido, subtotal, concepto }),
-    reteica:    razonReteica({ retenedor, retenido, subtotal, baseICA }),
+    reteica:    razonReteica({ retenedor, retenido, subtotal, baseICA, municipio }),
     reteiva:    razonReteiva({ retenedor, retenido, iva }),
   };
 

@@ -185,3 +185,64 @@ test("autorretenedor de ICA: no recibe ReteICA, y sí las demás", () => {
   assert.ok(r.retefuente > 0);
   assert.ok(r.reteiva > 0);
 });
+
+// ---- Ticket 07: las exclusiones y las bases mínimas son del municipio ----
+
+const MEDELLIN = MUNICIPIOS.find(m => m.id === "medellin");
+const CALI     = MUNICIPIOS.find(m => m.id === "cali");
+
+const legEn = ({ municipio, subtotal = 10_000_000, retenedor, retenido, declRetenido = {} }) => calcular({
+  subtotal, concepto: SERVICIOS, ivaRate: 0.19,
+  retenido: deriveProfile(retenido, declRetenido),
+  retenedor: deriveProfile(retenedor),
+  municipio,
+});
+
+// La exclusión del gran contribuyente declarante es del municipio, no del motor:
+// mismo retenido, mismo retenedor, resultado distinto según dónde se ejecute.
+const GRAN_CONTRIBUYENTE_DECLARANTE = {
+  retenedor: ["05", "48", "07", "09"], retenido: ["05", "48", "13"],
+  declRetenido: { declaranteICAMunicipio: true },
+};
+
+test("gran contribuyente declarante: excluido de ReteICA en Bogotá y en Cali", () => {
+  for (const municipio of [BOGOTA, CALI]) {
+    const r = legEn({ municipio, ...GRAN_CONTRIBUYENTE_DECLARANTE });
+    assert.equal(r.reteica, 0, municipio.nombre);
+    assert.equal(r.detalle.reteica.razon,
+      "el retenido es gran contribuyente declarante de ICA en el municipio", municipio.nombre);
+  }
+});
+
+// Ac. 093/2023 art. 82 no incluye ese hecho: Medellín no hereda la regla de Bogotá.
+test("gran contribuyente declarante: en Medellín sí se le retiene", () => {
+  const r = legEn({ municipio: MEDELLIN, ...GRAN_CONTRIBUYENTE_DECLARANTE });
+  assert.equal(r.detalle.reteica.razon, null);
+  assert.equal(r.reteica, Math.round(10_000_000 * 1.8 / 1000));
+});
+
+// Un solo umbral para cualquier pago, no el par compras/servicios: un servicio de
+// $500.000 pasa la base de Bogotá (4 UVT) y no la de Medellín (15 UVT).
+test("Medellín: la base mínima única no se comporta como el par compras/servicios", () => {
+  const enMedellin = legEn({ municipio: MEDELLIN, subtotal: 500_000,
+    retenedor: ["05", "48", "07", "09"], retenido: ["05", "48"] });
+  assert.equal(enMedellin.reteica, 0);
+  assert.match(enMedellin.detalle.reteica.razon, /base mínima municipal: \$785\.610/);
+  const enBogota = legEn({ municipio: BOGOTA, subtotal: 500_000,
+    retenedor: ["05", "48", "07", "09"], retenido: ["05", "48"] });
+  assert.ok(enBogota.reteica > 0);
+});
+
+test("Cali: la base mínima de servicios es 3 UVT y la de compras 15", () => {
+  const compras = CONCEPTOS.find(c => c.id === "comprasGenerales");
+  const servicio = legEn({ municipio: CALI, subtotal: 200_000,
+    retenedor: ["05", "48", "07", "09"], retenido: ["05", "48"] });
+  assert.ok(servicio.reteica > 0);
+  const compra = calcular({
+    subtotal: 200_000, concepto: compras, ivaRate: 0.19,
+    retenido: deriveProfile(["05", "48"]), retenedor: deriveProfile(["05", "48", "07", "09"]),
+    municipio: CALI,
+  });
+  assert.equal(compra.reteica, 0);
+  assert.match(compra.detalle.reteica.razon, /base mínima municipal: \$785\.610/);
+});

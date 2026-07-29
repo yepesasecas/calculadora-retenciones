@@ -64,3 +64,49 @@ test("la actividad se busca por código CIIU o por nombre", () => {
   // Un municipio sin tabla no tiene nada que buscar.
   assert.deepEqual(buscarActividades(OTRO, "7310"), []);
 });
+
+// ---- Ticket 07: la regla de retención puesta a prueba con dos ciudades más ----
+
+const MEDELLIN = MUNICIPIOS.find(m => m.id === "medellin");
+const CALI     = MUNICIPIOS.find(m => m.id === "cali");
+
+// Es la prueba de que la abstracción del ticket 05 tiene la forma correcta: en
+// Medellín la retención NO depende de la actividad [Ac. 093/2023 art. 83].
+test("Medellín: 1,8 por mil sea cual sea la actividad del retenido", () => {
+  const conActividad = resolverTarifaICA({ municipio: MEDELLIN, retenido: { actividadICA: "serviciosDemas" } });
+  const sinActividad = resolverTarifaICA({ municipio: MEDELLIN, retenido: {} });
+  assert.equal(conActividad.tarifaPorMil, 1.8);
+  assert.equal(sinActividad.tarifaPorMil, 1.8);
+  assert.match(sinActividad.fuente, /Ac\. 093\/2023 art\. 83/);
+});
+
+// Donde la actividad no interviene, no se le puede reprochar al retenido no haberla
+// informado: el aviso de «tarifa máxima» sería ruido y una afirmación falsa.
+test("Medellín: no se dispara el aviso de actividad no informada", () => {
+  assert.equal(resolverTarifaICA({ municipio: MEDELLIN, retenido: {} }).aviso, null);
+  assert.deepEqual(buscarActividades(MEDELLIN, "7310"), []);
+});
+
+test("Cali: retiene a la tarifa de la actividad, y a la máxima si no se informa", () => {
+  const conActividad = resolverTarifaICA({ municipio: CALI, retenido: { actividadICA: "caliServiciosDemas" } });
+  assert.equal(conActividad.tarifaPorMil, 10);
+  assert.match(conActividad.fuente, /0416\/2021 art\. 97/);
+  const sinActividad = resolverTarifaICA({ municipio: CALI, retenido: {} });
+  assert.equal(sinActividad.tarifaPorMil, CALI.regla.maxima);
+  assert.match(sinActividad.aviso, /no informada/i);
+});
+
+// El mismo retenido da tarifas distintas según dónde se ejecute el tramo.
+test("el mismo retenido da tarifas distintas en Bogotá y en Medellín", () => {
+  const retenido = { actividadICA: "serviciosDemas" };
+  assert.equal(resolverTarifaICA({ municipio: BOGOTA, retenido }).tarifaPorMil, 9.66);
+  assert.equal(resolverTarifaICA({ municipio: MEDELLIN, retenido }).tarifaPorMil, 1.8);
+});
+
+// Traer una actividad de otra ciudad no es lo mismo que no informarla, y el aviso
+// tiene que poder distinguirse para saber qué corregir.
+test("una actividad de otro municipio avisa que no figura en esta tabla", () => {
+  const r = resolverTarifaICA({ municipio: CALI, retenido: { actividadICA: "serviciosDemas" } });
+  assert.equal(r.tarifaPorMil, 10);
+  assert.match(r.aviso, /no figura en la tabla de Santiago de Cali/);
+});

@@ -70,7 +70,7 @@ test("los nueve casos de cadena siguen presentes", () => {
 test("cambiar el municipio de un tramo no mueve el otro", () => {
   const base = CADENA_CASOS.find(c => c.nombre === "Mockup — margen 20 %").ent;
   const enBogota = liquidar(base);
-  const conTramo2Fuera = liquidar({ ...base, municipioLeg2Id: "otro", tarifaICAManual: 9 });
+  const conTramo2Fuera = liquidar({ ...base, municipioLeg2Id: "medellin" });
   assert.deepEqual(conTramo2Fuera.leg1, enBogota.leg1);
 });
 
