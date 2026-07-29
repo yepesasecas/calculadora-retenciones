@@ -2,18 +2,21 @@
 // prosa `es-CO`. Ver la nota de ADR-0003 allí.
 const fmt = n => n.toLocaleString("es-CO");
 
-// Busca actividades de la tabla de un municipio por código CIIU o por nombre.
-// Sin consulta devuelve la tabla entera; un municipio sin tabla no tiene ninguna.
+// La tabla de actividades de un municipio, o ninguna: sólo la regla *por
+// actividad* tiene tabla, y un municipio de tarifa plana no consulta actividades.
+export const tablaDe = municipio =>
+  municipio?.regla?.tipo === "actividad" ? municipio.regla.tabla : [];
+
+// Busca actividades por código CIIU o por nombre. Sin consulta, la tabla entera.
 export function buscarActividades(municipio, consulta = "") {
-  const tabla = municipio?.regla?.tipo === "actividad" ? municipio.regla.tabla : [];
+  const tabla = tablaDe(municipio);
   const q = consulta.trim().toLowerCase();
   if (!q) return tabla;
   return tabla.filter(a =>
     a.nombre.toLowerCase().includes(q) || a.ciiu.some(c => c.startsWith(q) || q.startsWith(c)));
 }
 
-export const actividadPorId = (municipio, id) =>
-  (municipio?.regla?.tipo === "actividad" ? municipio.regla.tabla : []).find(a => a.id === id) ?? null;
+export const actividadPorId = (municipio, id) => tablaDe(municipio).find(a => a.id === id) ?? null;
 
 // De dónde sale la tarifa de ReteICA de un tramo: **del municipio y del retenido**,
 // nunca del concepto nacional ni del retenedor. Función pura y expuesta a
@@ -80,6 +83,10 @@ export function resolverTarifaICA({ municipio, retenido = {}, tarifaManual = 0 }
     aviso: `actividad ICA del retenido no informada — se aplicó la tarifa máxima de ${municipio.nombre} (${fmt(regla.maxima)} x 1000).`,
   };
 }
+
+// Un municipio sin bases cargadas no tiene tope que verificar, y hay que decirlo:
+// la cifra sale sin haberse contrastado contra ningún umbral.
+export const sinBasesCargadas = municipio => municipio?.baseMinima?.tipo === "sinCargar";
 
 // La base mínima del municipio para el tramo. La forma cambia entre ciudades:
 // Bogotá y Cali distinguen compras de servicios, Medellín tiene un umbral único.

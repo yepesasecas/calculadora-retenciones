@@ -19,8 +19,12 @@ const fmt = n => n.toLocaleString("es-CO");
 // municipios, con reglas y bases mínimas de forma distinta. `municipio` queda
 // como valor por defecto de ambos, para que el caso corriente —todo en una
 // ciudad— siga siendo un solo campo.
-export function calcularCadena({ contrato, margen, concepto, municipio, tarifaICAManual, ivaRate,
+// La tarifa digitada a mano también es de cada leg, y por el mismo motivo que el
+// municipio: dos legs en dos ciudades sin tabla cargada no tienen por qué
+// compartir un número escrito a mano.
+export function calcularCadena({ contrato, margen, concepto, municipio, ivaRate,
                                  municipioLeg1 = municipio, municipioLeg2 = municipio,
+                                 tarifaICAManualLeg1 = 0, tarifaICAManualLeg2 = 0,
                                  clienteFinal, agencia, proveedor }) {
   const ganancia = margen.modo === "fijo"
     ? Math.round(margen.valor)
@@ -38,9 +42,9 @@ export function calcularCadena({ contrato, margen, concepto, municipio, tarifaIC
   // Margen del 100 %: te quedas el contrato completo, no hay subcontrato.
   const sinProveedor = proveedorSubtotal === 0;
 
-  const comun = { concepto, tarifaICAManual };
+  const comun = { concepto };
   const leg1 = calcular({
-    ...comun, subtotal: contrato, municipio: municipioLeg1,
+    ...comun, subtotal: contrato, municipio: municipioLeg1, tarifaICAManual: tarifaICAManualLeg1,
     ivaRate: agencia.responsableIVA ? ivaRate : 0,
     retenedor: clienteFinal, retenido: agencia,
     // Si la Agencia determina su ICA sobre base gravable especial, la retención
@@ -51,7 +55,7 @@ export function calcularCadena({ contrato, margen, concepto, municipio, tarifaIC
     baseReteICA: agencia.baseGravableEspecial ? ganancia : contrato,
   });
   const leg2 = calcular({
-    ...comun, subtotal: proveedorSubtotal, municipio: municipioLeg2,
+    ...comun, subtotal: proveedorSubtotal, municipio: municipioLeg2, tarifaICAManual: tarifaICAManualLeg2,
     ivaRate: proveedor.responsableIVA ? ivaRate : 0,
     retenedor: agencia, retenido: proveedor,
   });

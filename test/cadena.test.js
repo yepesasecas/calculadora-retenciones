@@ -121,3 +121,19 @@ test("base gravable especial: IVA, neto, retefuente y ReteIVA no se mueven", () 
 test("base gravable especial: encenderla en la Agencia no mueve el tramo 2", () => {
   assert.deepEqual(conBaseEspecial(CASO_BASE).leg2, liquidar(CASO_BASE).leg2);
 });
+
+// La tarifa digitada también es de cada tramo. Dos tramos en municipios sin tabla
+// cargada no tienen por qué compartir un número escrito a mano: era el mismo error
+// —una tarifa para dos retenidos distintos— sobreviviendo en la entrada libre.
+test("cada tramo usa su propia tarifa digitada", () => {
+  const base = CADENA_CASOS.find(c => c.nombre === "Proveedor NO SIMPLE — el tramo 2 sí retiene").ent;
+  const r = liquidar({
+    ...base, municipioLeg1Id: "otro", municipioLeg2Id: "otro",
+    tarifaICAManualLeg1: 9.99, tarifaICAManualLeg2: 4,
+    declarados: { agencia: {}, proveedor: {} },
+  });
+  assert.equal(r.leg1.tarifaICA.tarifaPorMil, 9.99);
+  assert.equal(r.leg2.tarifaICA.tarifaPorMil, 4);
+  assert.equal(r.leg1.reteica, Math.round(100000000 * 9.99 / 1000));
+  assert.equal(r.leg2.reteica, Math.round(80000000 * 4 / 1000));
+});

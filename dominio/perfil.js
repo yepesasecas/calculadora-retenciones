@@ -3,24 +3,29 @@ import { COD } from "../datos/responsabilidades.js";
 // Los hechos que **no** están en el RUT y que el usuario declara. Son municipales:
 // el RUT es nacional y no puede contenerlos (enmienda de ADR-0001).
 //
+// `lado` dice sobre qué punta de un tramo obra el hecho: hay hechos que sólo
+// importan cuando la parte **practica** la retención y otros sólo cuando se la
+// practican a ella. La vista lo usa para no pedirle a una parte un hecho que en
+// esta cadena no puede cambiar ninguna cifra.
+//
 // `porDefecto` recibe el perfil ya derivado del RUT y devuelve el valor inicial,
 // que el usuario puede cambiar. Ser responsable de IVA es el proxy del régimen
 // común de ICA, al que Bogotá designó agente retenedor en bloque por resolución
 // (DDI-052377/2016, DDI-000305/2020).
 export const HECHOS_MUNICIPALES = [
-  { id: "agenteReteICA", nombre: "Agente de retención de ICA",
+  { id: "agenteReteICA", nombre: "Agente de retención de ICA", lado: "retenedor",
     ayuda: "Lo confiere el municipio por resolución. En Bogotá alcanza a todo el régimen común de ICA.",
     porDefecto: p => p.responsableIVA },
-  { id: "declaranteICAMunicipio", nombre: "Declarante de ICA en el municipio",
+  { id: "declaranteICAMunicipio", nombre: "Declarante de ICA en el municipio", lado: "retenido",
     ayuda: "Junto con gran contribuyente, excluye de ReteICA en los municipios que tienen esa exclusión — Bogotá y Cali sí, Medellín no.",
     porDefecto: () => false },
-  { id: "autorretenedorICA", nombre: "Autorretenedor de ICA",
+  { id: "autorretenedorICA", nombre: "Autorretenedor de ICA", lado: "retenido",
     ayuda: "Habilitado por resolución municipal a retenerse a sí mismo: nadie le practica ReteICA. Distinto del código 15, que es de renta.",
     porDefecto: () => false },
   // Arranca apagada a propósito: que la Agencia califique como agencia de
   // publicidad es un hecho que ningún documento resuelve y que está preguntado
   // (pregunta 16 de `docs/preguntas-contadora.md`).
-  { id: "baseGravableEspecial", nombre: "Base gravable especial (agencia de publicidad)",
+  { id: "baseGravableEspecial", nombre: "Base gravable especial (agencia de publicidad)", lado: "retenido",
     ayuda: "Su ICA se liquida sobre honorarios y comisiones percibidos para sí, no sobre el ingreso bruto (L. 1819/2016 art. 342 par. 1). La retención sigue esa base (D. 271/2002 art. 9). No cambia cómo se factura.",
     porDefecto: () => false },
 ];

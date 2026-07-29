@@ -1,4 +1,4 @@
-import { resolverTarifaICA, baseMinimaICA } from "./tarifa-ica.js";
+import { resolverTarifaICA, baseMinimaICA, sinBasesCargadas } from "./tarifa-ica.js";
 
 export const RETEIVA_TARIFA = 0.15; // art. 437-1 ET, tarifa general
 
@@ -61,8 +61,10 @@ function razonReteiva({ retenedor, retenido, iva }) {
   return null;
 }
 
-// Las tres retenciones, en el orden en que se leen en pantalla.
-const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
+// Las tres retenciones, en el orden en que se leen en pantalla. Lo exporta el
+// dominio para que la vista pinte las mismas y en el mismo orden, sin repetir la
+// lista ni poder desincronizarse de ella.
+export const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
 
 // Motor por leg. Un leg es un par (retenedor, retenido): el retenedor
 // practica las retenciones, al retenido se las practican. La Agencia es retenido
@@ -107,7 +109,7 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
   if (!razones.reteica && baseReteICA !== subtotal)
     notas.push(`ReteICA: liquidada sobre la base gravable especial del retenido ($${fmt(baseReteICA)}), no sobre el subtotal facturado ($${fmt(subtotal)}) — L. 1819/2016 art. 342 par. 1 y D. 271/2002 art. 9.`);
   if (!razones.reteica && tarifaICA.aviso) notas.push(`ReteICA: ${tarifaICA.aviso}`);
-  if (!razones.reteica && municipio.baseMinima?.tipo === "sinCargar")
+  if (!razones.reteica && sinBasesCargadas(municipio))
     notas.push("ReteICA: municipio sin bases mínimas cargadas — se aplicó la tarifa sin verificar tope. Confirme las reglas locales.");
   if (!razones.reteiva)
     notas.push("ReteIVA (15 % del IVA) estimado según la matriz de regímenes — regla no verificada contra factura real: confirmar con la contadora.");

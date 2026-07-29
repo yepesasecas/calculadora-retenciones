@@ -1,9 +1,9 @@
 import { CONCEPTOS } from "./datos/conceptos.js";
 import { MUNICIPIOS } from "./datos/municipios.js";
-import { buscarActividades } from "./dominio/tarifa-ica.js";
+import { buscarActividades, tablaDe } from "./dominio/tarifa-ica.js";
 import { COD, esRelevante } from "./datos/responsabilidades.js";
 import { deriveProfile, HECHOS_MUNICIPALES } from "./dominio/perfil.js";
-import { RETEIVA_TARIFA } from "./dominio/tramo.js";
+import { RETEIVA_TARIFA, RETENCIONES } from "./dominio/tramo.js";
 import { calcularCadena } from "./dominio/cadena.js";
 import { CADENA_CASOS } from "./fixtures/cadena.js";
 
@@ -71,11 +71,20 @@ const textoActividad = a =>
   (a.ciiu.length ? ` · CIIU ${a.ciiu.join(" ")}` : "");
 
 // Un desplegable por parte: cada uno lista la tabla del municipio de SU tramo,
-// que después del ticket 06 pueden ser dos ciudades distintas.
+// que después del ticket 06 pueden ser dos ciudades distintas. Donde el municipio
+// retiene a tarifa plana no hay actividad que preguntar —la regla no la consulta—
+// así que el campo entero desaparece en vez de ofrecer una lista vacía.
 function llenarActividades() {
-  for (const party of ["cf", "ag", "pr"])
-    $(`${party}Actividades`).innerHTML = buscarActividades(municipioDeParte[party](), "")
+  for (const party of ["cf", "ag", "pr"]) {
+    if (!ES_RETENIDO[party]) continue;
+    const municipio = municipioDeParte[party]();
+    const tabla = tablaDe(municipio);
+    const campo = $(`${party}Declarados`).querySelector("[data-campo-actividad]");
+    campo.hidden = tabla.length === 0;
+    campo.querySelector("input").placeholder = `No informada — tarifa máxima de ${municipio.nombre}`;
+    $(`${party}Actividades`).innerHTML = tabla
       .map(a => `<option value="${textoActividad(a)}"></option>`).join("");
+  }
 }
 
 // ---- Entradas de responsabilidades del RUT ----
@@ -104,27 +113,36 @@ function initParty(party, defaults) {
 // defecto que calcula el perfil, que puede moverse al cambiar los códigos del RUT.
 const declarados = { cf: {}, ag: {}, pr: {} };
 
-// Los tres se pintan iguales, como los chips del RUT: la tarjeta describe a la
-// parte, no el papel que le toca en esta cadena.
+// A cada parte se le piden los hechos del lado que le toca en esta cadena: el
+// Cliente final sólo practica retenciones, así que los hechos del retenido —y su
+// actividad, que fija la tarifa de quien recibe el pago— no le cambiarían ninguna
+// cifra. Preguntar lo que no se usa invita a creer que se usó.
+const ES_RETENIDO = { cf: false, ag: true, pr: true };
+
 function initDeclarados(party) {
+  const hechos = HECHOS_MUNICIPALES.filter(h => h.lado === "retenedor" || ES_RETENIDO[party]);
   $(`${party}Declarados`).innerHTML =
     `<div class="rotulo">Lo declaras tú · no sale del RUT</div>` +
-    HECHOS_MUNICIPALES.map(h =>
+    hechos.map(h =>
       `<label title="${h.ayuda}">` +
       `<input type="checkbox" data-hecho="${h.id}" data-party="${party}">` +
       `<span>${h.nombre}</span></label>`).join("") +
-    `<span class="campo">Actividad ICA (CIIU o nombre)` +
-    `<input type="text" list="${party}Actividades" data-actividad="${party}"` +
-    ` placeholder="No informada — tarifa máxima del municipio">` +
-    `<datalist id="${party}Actividades"></datalist></span>`;
+    (ES_RETENIDO[party]
+      ? `<span class="campo" data-campo-actividad="${party}">Actividad ICA (CIIU o nombre)` +
+        `<input type="text" list="${party}Actividades" data-actividad="${party}">` +
+        `<datalist id="${party}Actividades"></datalist></span>`
+      : "");
 }
 
-// La casilla guarda el texto de la opción; el id vive aparte. Sin coincidencia,
-// la actividad queda no informada, que es un estado con consecuencia normativa
-// propia (tarifa máxima) y no un error de digitación.
+// La casilla guarda el texto de la opción; el id vive aparte. Se resuelve contra
+// las tablas de **todos** los municipios y no sólo la del tramo, para que una
+// actividad escogida en una ciudad sobreviva al cambio de municipio: entonces el
+// motor puede decir que no figura en la tabla de la nueva, que es lo que pasó, en
+// vez de darla por no informada mientras sigue escrita en pantalla.
 function leerActividad(party) {
-  const texto = $(`${party}Declarados`).querySelector("[data-actividad]").value;
-  const a = buscarActividades(municipioDeParte[party](), "").find(x => textoActividad(x) === texto);
+  const campo = $(`${party}Declarados`).querySelector("[data-actividad]");
+  if (!campo) return null;
+  const a = MUNICIPIOS.flatMap(tablaDe).find(x => textoActividad(x) === campo.value);
   return a ? a.id : null;
 }
 
@@ -211,8 +229,6 @@ function tarifasDe(leg, concepto, retenido) {
     reteiva: `${pct(RETEIVA_TARIFA)} del IVA`,
   };
 }
-
-const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
 
 // Una retención con razón no pinta fila (ADR-0004): la razón se enuncia en el
 // panel de notas, una línea por retención que no aplica (ADR-0005). Las tres
@@ -316,7 +332,9 @@ function render() {
   const r = calcularCadena({
     contrato, margen: leerMargen(), concepto, municipio,
     municipioLeg1: municipioLeg(1), municipioLeg2: municipioLeg(2),
-    tarifaICAManual: Number($("icaTarifa").value) || 0, ivaRate,
+    tarifaICAManualLeg1: Number($("icaTarifaT1").value) || 0,
+    tarifaICAManualLeg2: Number($("icaTarifaT2").value) || 0,
+    ivaRate,
     clienteFinal, agencia, proveedor,
   });
 
@@ -336,11 +354,14 @@ function render() {
 
   // Las notas de los dos legs, etiquetadas para no confundirlas.
   // Sin subcontrato el leg 2 no tiene nada que explicar.
+  // De qué acuerdo salió la tarifa aplicada, para poder rastrearla después. Sólo
+  // donde hubo ReteICA: la procedencia de una tarifa que no se usó no explica nada.
+  const fuenteICA = (etiqueta, leg) =>
+    leg.detalle.reteica.razon ? [] : [[etiqueta, `Tarifa de ReteICA: ${leg.tarifaICA.fuente}.`]];
   const notas = [
-    // De qué acuerdo salió la tarifa aplicada, para poder rastrearla después.
-    ["Tramo 1", `Tarifa de ReteICA: ${r.leg1.tarifaICA.fuente}.`],
+    ...fuenteICA("Tramo 1", r.leg1),
     ...r.leg1.notas.map(n => ["Tramo 1", n]),
-    ...(r.sinProveedor ? [] : [["Tramo 2", `Tarifa de ReteICA: ${r.leg2.tarifaICA.fuente}.`]]),
+    ...(r.sinProveedor ? [] : fuenteICA("Tramo 2", r.leg2)),
     ...(r.sinProveedor ? [] : r.leg2.notas.map(n => ["Tramo 2", n])),
   ];
   notesEl.innerHTML = notas.map(([t, n]) => `<div class="note"><b>${t}:</b> ${n}</div>`).join("");
@@ -381,7 +402,7 @@ $("margenModo").addEventListener("change", () => {
 }));
 
 // Otros inputs simples (tarifas, margen en %, selects).
-["concepto", "ivaRate", "icaTarifa", "margenPct"].forEach(id =>
+["concepto", "ivaRate", "icaTarifaT1", "icaTarifaT2", "margenPct"].forEach(id =>
   $(id).addEventListener($(id).tagName === "SELECT" ? "change" : "input", render));
 
 render();
