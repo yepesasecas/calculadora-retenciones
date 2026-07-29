@@ -68,7 +68,14 @@ const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["ret
 // practica las retenciones, al retenido se las practican. La Agencia es retenido
 // en el leg 1 y retenedor en el leg 2 — por eso los parámetros son relacionales
 // y no "vendedor"/"cliente" fijos (ver ADR-0002).
-export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, municipio, tarifaICAManual = 0 }) {
+// `baseReteICA` es la única base que puede apartarse del subtotal del tramo: hay
+// sujetos que determinan su ICA sobre una base gravable especial, y la retención
+// sigue esa base [D. 271/2002 art. 9]. Es regla **sólo de ICA** — el IVA, el neto,
+// la retefuente y la ReteIVA siguen sobre el subtotal facturado, de modo que el
+// modelo reventa/principal de ADR-0002 queda intacto: cambia la base de una
+// retención, no cómo se factura.
+export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, municipio,
+                           tarifaICAManual = 0, baseReteICA = subtotal }) {
   const notas = [];
   const iva = Math.round(subtotal * ivaRate);
   const neto = subtotal + iva;
@@ -88,7 +95,7 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
 
   const retefuente = razones.retefuente ? 0
     : Math.round(subtotal * concepto.tarifas[retenido.declarante ? "declarante" : "noDeclarante"]);
-  const reteica = razones.reteica ? 0 : Math.round(subtotal * tarifaICA.tarifaPorMil / 1000);
+  const reteica = razones.reteica ? 0 : Math.round(baseReteICA * tarifaICA.tarifaPorMil / 1000);
   const reteiva = razones.reteiva ? 0 : Math.round(iva * RETEIVA_TARIFA);
 
   // Una línea por retención que no aplica, derivada de la razón para que las dos
@@ -97,6 +104,8 @@ export function calcular({ subtotal, concepto, ivaRate, retenido, retenedor, mun
   for (const [id, nombre] of RETENCIONES)
     if (razones[id]) notas.push(`${nombre}: ${razones[id]} — no aplica.`);
 
+  if (!razones.reteica && baseReteICA !== subtotal)
+    notas.push(`ReteICA: liquidada sobre la base gravable especial del retenido ($${fmt(baseReteICA)}), no sobre el subtotal facturado ($${fmt(subtotal)}) — L. 1819/2016 art. 342 par. 1 y D. 271/2002 art. 9.`);
   if (!razones.reteica && tarifaICA.aviso) notas.push(`ReteICA: ${tarifaICA.aviso}`);
   if (!razones.reteica && municipio.baseMinima?.tipo === "sinCargar")
     notas.push("ReteICA: municipio sin bases mínimas cargadas — se aplicó la tarifa sin verificar tope. Confirme las reglas locales.");

@@ -17,6 +17,12 @@ export const HECHOS_MUNICIPALES = [
   { id: "autorretenedorICA", nombre: "Autorretenedor de ICA",
     ayuda: "Habilitado por resolución municipal a retenerse a sí mismo: nadie le practica ReteICA. Distinto del código 15, que es de renta.",
     porDefecto: () => false },
+  // Arranca apagada a propósito: que la Agencia califique como agencia de
+  // publicidad es un hecho que ningún documento resuelve y que está preguntado
+  // (pregunta 16 de `docs/preguntas-contadora.md`).
+  { id: "baseGravableEspecial", nombre: "Base gravable especial (agencia de publicidad)",
+    ayuda: "Su ICA se liquida sobre honorarios y comisiones percibidos para sí, no sobre el ingreso bruto (L. 1819/2016 art. 342 par. 1). La retención sigue esa base (D. 271/2002 art. 9). No cambia cómo se factura.",
+    porDefecto: () => false },
 ];
 
 // Deriva el perfil fiscal de una parte: los códigos del RUT (casilla 53) más los

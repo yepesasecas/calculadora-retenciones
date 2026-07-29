@@ -30,11 +30,17 @@ cadena tiene que hacerle llegar el margen.
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Apagada, nada cambia respecto de hoy
-- [ ] Encendida en la Agencia, el ReteICA del tramo 1 va sobre el margen
-- [ ] IVA, neto, retefuente y ReteIVA se siguen calculando sobre el contrato completo
-- [ ] El tramo 2 no se mueve al encenderla en la Agencia
-- [ ] El código dice por qué esto no contradice ADR-0002
-- [ ] `npm test` en verde
+Hecho 2026-07-28. El motor gana `baseReteICA`, que por defecto es el subtotal del
+tramo. La base mínima se sigue midiendo contra el subtotal —es la cuantía del
+pago— y sólo la tarifa se aplica sobre la base especial. Si quien la declara es el
+Proveedor, la cadena no conoce su margen y lo dice en una nota en vez de liquidar
+sobre una base inventada.
+
+- [x] Apagada, nada cambia respecto de hoy
+- [x] Encendida en la Agencia, el ReteICA del tramo 1 va sobre el margen
+- [x] IVA, neto, retefuente y ReteIVA se siguen calculando sobre el contrato completo
+- [x] El tramo 2 no se mueve al encenderla en la Agencia
+- [x] El código dice por qué esto no contradice ADR-0002
+- [x] `npm test` en verde
