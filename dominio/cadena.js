@@ -11,7 +11,20 @@ const fmt = n => n.toLocaleString("es-CO");
 //
 // El IVA de cada leg sale del retenido: si el retenido no es responsable de IVA
 // (código 49/53), ese leg se factura sin IVA.
-export function calcularCadena({ contrato, margen, concepto, municipio, icaTarifaPorMil, ivaRate,
+//
+// El municipio es del **leg**, no de la cadena: un servicio se grava donde se
+// ejecuta la prestación (Ley 1819/2016 art. 343), y los dos legs son dos
+// servicios distintos que pueden ocurrir en sitios distintos — una campaña
+// vendida en Bogotá cuya grabación se subcontrata en Medellín son dos
+// municipios, con reglas y bases mínimas de forma distinta. `municipio` queda
+// como valor por defecto de ambos, para que el caso corriente —todo en una
+// ciudad— siga siendo un solo campo.
+// La tarifa digitada a mano también es de cada leg, y por el mismo motivo que el
+// municipio: dos legs en dos ciudades sin tabla cargada no tienen por qué
+// compartir un número escrito a mano.
+export function calcularCadena({ contrato, margen, concepto, municipio, ivaRate,
+                                 municipioLeg1 = municipio, municipioLeg2 = municipio,
+                                 tarifaICAManualLeg1 = 0, tarifaICAManualLeg2 = 0,
                                  clienteFinal, agencia, proveedor }) {
   const ganancia = margen.modo === "fijo"
     ? Math.round(margen.valor)
@@ -29,17 +42,29 @@ export function calcularCadena({ contrato, margen, concepto, municipio, icaTarif
   // Margen del 100 %: te quedas el contrato completo, no hay subcontrato.
   const sinProveedor = proveedorSubtotal === 0;
 
-  const comun = { concepto, municipio, icaTarifaPorMil };
+  const comun = { concepto };
   const leg1 = calcular({
-    ...comun, subtotal: contrato,
+    ...comun, subtotal: contrato, municipio: municipioLeg1, tarifaICAManual: tarifaICAManualLeg1,
     ivaRate: agencia.responsableIVA ? ivaRate : 0,
     retenedor: clienteFinal, retenido: agencia,
+    // Si la Agencia determina su ICA sobre base gravable especial, la retención
+    // del tramo 1 sigue esa base — que en el modelo reventa es el margen, sus
+    // «ingresos propios percibidos para sí». Sigue facturando el contrato
+    // completo con IVA sobre el total: esto NO es el modelo de mandato que
+    // rechazó ADR-0002, es sólo la base de una retención municipal.
+    baseReteICA: agencia.baseGravableEspecial ? ganancia : contrato,
   });
   const leg2 = calcular({
-    ...comun, subtotal: proveedorSubtotal,
+    ...comun, subtotal: proveedorSubtotal, municipio: municipioLeg2, tarifaICAManual: tarifaICAManualLeg2,
     ivaRate: proveedor.responsableIVA ? ivaRate : 0,
     retenedor: agencia, retenido: proveedor,
   });
+
+  // El margen del Proveedor no lo conoce la cadena —su subtotal es todo lo que
+  // sabemos de él—, así que su base especial no se puede liquidar aquí. Se dice,
+  // en vez de liquidar sobre una base inventada.
+  if (proveedor.baseGravableEspecial && !sinProveedor)
+    leg2.notas.push("ReteICA: el Proveedor declara base gravable especial, pero la calculadora no conoce su margen — se liquidó sobre el subtotal facturado. Pídale la base y verifíquela.");
 
   return { proveedorSubtotal, ganancia, sinProveedor, error, leg1, leg2 };
 }

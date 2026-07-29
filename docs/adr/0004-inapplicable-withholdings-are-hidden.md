@@ -1,6 +1,24 @@
 # ADR-0004 — Inapplicable withholdings render no row
 
-Status: Accepted (2026-07-25)
+Status: Accepted (2026-07-25), amended (2026-07-28)
+
+## Amendment (2026-07-28) — the decision stands, the premise does not
+
+Decision 1 (a withholding that does not apply renders no row) and decision 3 (the
+IVA row always renders) are unchanged and remain the behaviour.
+
+What has gone is the *premise*. This ADR argued from "`bloqueo` is computed per leg,
+not per withholding", so one sentence printed three times. Research against primary
+sources found that no fact gates a whole leg — each withholding answers to a
+different authority ([ADR-0005](./0005-per-retencion-gating.md)). The three
+withholdings therefore no longer share one reason, and the notes panel now prints
+**one line per non-applying withholding** rather than one per leg. Decision 2's
+"single home for reasons" survives; "says it once per leg" does not.
+
+That repetition is accepted deliberately: three *different* reasons are worth three
+lines. The guarantee under Consequences — that absence is legible only because the
+panel names every reason the engine can emit — is unchanged and now easier to hold,
+since each reason has exactly one nota.
 
 ## Context
 

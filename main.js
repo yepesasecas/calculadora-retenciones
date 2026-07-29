@@ -1,8 +1,9 @@
 import { CONCEPTOS } from "./datos/conceptos.js";
 import { MUNICIPIOS } from "./datos/municipios.js";
+import { buscarActividades, tablaDe } from "./dominio/tarifa-ica.js";
 import { COD, esRelevante } from "./datos/responsabilidades.js";
-import { deriveProfile } from "./dominio/perfil.js";
-import { RETEIVA_TARIFA } from "./dominio/tramo.js";
+import { deriveProfile, HECHOS_MUNICIPALES } from "./dominio/perfil.js";
+import { RETEIVA_TARIFA, RETENCIONES } from "./dominio/tramo.js";
 import { calcularCadena } from "./dominio/cadena.js";
 import { CADENA_CASOS } from "./fixtures/cadena.js";
 
@@ -16,9 +17,9 @@ function runCadena() {
       ...c.ent,
       concepto: CONCEPTOS.find(x => x.id === c.ent.conceptoId),
       municipio: MUNICIPIOS.find(x => x.id === c.ent.municipioId),
-      clienteFinal: deriveProfile(c.ent.clienteFinal),
-      agencia: deriveProfile(c.ent.agencia),
-      proveedor: deriveProfile(c.ent.proveedor),
+      clienteFinal: deriveProfile(c.ent.clienteFinal, c.ent.declarados?.clienteFinal),
+      agencia: deriveProfile(c.ent.agencia, c.ent.declarados?.agencia),
+      proveedor: deriveProfile(c.ent.proveedor, c.ent.declarados?.proveedor),
     });
     const propios = ["leg1", "leg2", "razones1", "razones2"];
     const lineas = [
@@ -46,7 +47,45 @@ const $ = id => document.getElementById(id);
 CONCEPTOS.forEach(c => $("concepto").add(new Option(c.nombre, c.id)));
 $("concepto").value = "serviciosGenerales";
 MUNICIPIOS.forEach(m => $("muni").add(new Option(m.nombre, m.id)));
-$("icaTarifa").value = MUNICIPIOS[0].tarifaPorMil;
+// Los dos tramos arrancan en el municipio de la cadena y sólo se separan si el
+// usuario lo dice: el caso corriente —todo en una ciudad— sigue siendo un campo.
+for (const id of ["muniT1", "muniT2"]) {
+  $(id).add(new Option("Igual al de la cadena", ""));
+  MUNICIPIOS.forEach(m => $(id).add(new Option(m.nombre, m.id)));
+}
+
+const municipioPorId = id => MUNICIPIOS.find(m => m.id === id);
+const municipioCadena = () => municipioPorId($("muni").value);
+const municipioLeg = n => municipioPorId($(`muniT${n}`).value) ?? municipioCadena();
+
+// A qué municipio mira la actividad de cada parte: a la del tramo donde esa parte
+// es retenida. El Cliente final nunca es retenido en esta cadena, así que se le
+// muestra la tabla de la cadena.
+const municipioDeParte = { cf: municipioCadena, ag: () => municipioLeg(1), pr: () => municipioLeg(2) };
+
+// La actividad se busca por código CIIU o por nombre. El desplegable nativo filtra
+// por subcadena sobre el valor de la opción, así que el valor lleva las dos cosas
+// —nombre, tarifa y códigos— y una sola casilla sirve para las dos búsquedas.
+const textoActividad = a =>
+  `${a.nombre} — ${a.tarifaPorMil.toLocaleString("es-CO")} ‰` +
+  (a.ciiu.length ? ` · CIIU ${a.ciiu.join(" ")}` : "");
+
+// Un desplegable por parte: cada uno lista la tabla del municipio de SU tramo,
+// que después del ticket 06 pueden ser dos ciudades distintas. Donde el municipio
+// retiene a tarifa plana no hay actividad que preguntar —la regla no la consulta—
+// así que el campo entero desaparece en vez de ofrecer una lista vacía.
+function llenarActividades() {
+  for (const party of ["cf", "ag", "pr"]) {
+    if (!ES_RETENIDO[party]) continue;
+    const municipio = municipioDeParte[party]();
+    const tabla = tablaDe(municipio);
+    const campo = $(`${party}Declarados`).querySelector("[data-campo-actividad]");
+    campo.hidden = tabla.length === 0;
+    campo.querySelector("input").placeholder = `No informada — tarifa máxima de ${municipio.nombre}`;
+    $(`${party}Actividades`).innerHTML = tabla
+      .map(a => `<option value="${textoActividad(a)}"></option>`).join("");
+  }
+}
 
 // ---- Entradas de responsabilidades del RUT ----
 // Los ocho códigos marcables. Del conjunto "relevante" quedan fuera los
@@ -68,6 +107,50 @@ function chip(party, r, checked) {
 function initParty(party, defaults) {
   const rel = $(`${party}Relevant`);
   CHIPS.forEach(r => rel.appendChild(chip(party, r, defaults.includes(r.code))));
+}
+
+// Los hechos municipales que el usuario ha tocado. Vacío = tomar el valor por
+// defecto que calcula el perfil, que puede moverse al cambiar los códigos del RUT.
+const declarados = { cf: {}, ag: {}, pr: {} };
+
+// A cada parte se le piden los hechos del lado que le toca en esta cadena: el
+// Cliente final sólo practica retenciones, así que los hechos del retenido —y su
+// actividad, que fija la tarifa de quien recibe el pago— no le cambiarían ninguna
+// cifra. Preguntar lo que no se usa invita a creer que se usó.
+const ES_RETENIDO = { cf: false, ag: true, pr: true };
+
+function initDeclarados(party) {
+  const hechos = HECHOS_MUNICIPALES.filter(h => h.lado === "retenedor" || ES_RETENIDO[party]);
+  $(`${party}Declarados`).innerHTML =
+    `<div class="rotulo">Lo declaras tú · no sale del RUT</div>` +
+    hechos.map(h =>
+      `<label title="${h.ayuda}">` +
+      `<input type="checkbox" data-hecho="${h.id}" data-party="${party}">` +
+      `<span>${h.nombre}</span></label>`).join("") +
+    (ES_RETENIDO[party]
+      ? `<span class="campo" data-campo-actividad="${party}">Actividad ICA (CIIU o nombre)` +
+        `<input type="text" list="${party}Actividades" data-actividad="${party}">` +
+        `<datalist id="${party}Actividades"></datalist></span>`
+      : "");
+}
+
+// La casilla guarda el texto de la opción; el id vive aparte. Se resuelve contra
+// las tablas de **todos** los municipios y no sólo la del tramo, para que una
+// actividad escogida en una ciudad sobreviva al cambio de municipio: entonces el
+// motor puede decir que no figura en la tabla de la nueva, que es lo que pasó, en
+// vez de darla por no informada mientras sigue escrita en pantalla.
+function leerActividad(party) {
+  const campo = $(`${party}Declarados`).querySelector("[data-actividad]");
+  if (!campo) return null;
+  const a = MUNICIPIOS.flatMap(tablaDe).find(x => textoActividad(x) === campo.value);
+  return a ? a.id : null;
+}
+
+// La casilla muestra siempre el valor vigente —el declarado, o el que trae por
+// defecto—, para que no pueda decir una cosa mientras el motor usa otra.
+function syncDeclarados(party, prof) {
+  for (const h of HECHOS_MUNICIPALES)
+    $(`${party}Declarados`).querySelector(`[data-hecho="${h.id}"]`).checked = prof[h.id];
 }
 
 function readCodes(party) {
@@ -97,6 +180,15 @@ function renderDerived(party, prof) {
 initParty("cf", ["05", "48", "07", "09"]);
 initParty("ag", ["05", "48", "07"]);
 initParty("pr", ["47", "49"]);
+["cf", "ag", "pr"].forEach(initDeclarados);
+llenarActividades();
+// Matiz es agencia de publicidad (CIIU 7310): en Bogotá liquida como «demás
+// actividades de servicios», que es el 9,66 de las seis facturas de referencia.
+// Es un valor por defecto, no un hecho fijo: se puede cambiar como cualquier otro.
+{
+  const demas = buscarActividades(municipioDeParte.ag(), "7310")[0];
+  if (demas) $("agDeclarados").querySelector("[data-actividad]").value = textoActividad(demas);
+}
 
 function leerMonto(id) {
   const raw = $(id).value.replace(/[.\s]/g, "").replace(",", ".");
@@ -128,19 +220,19 @@ const filaDetalle = (etiqueta, det, tarifa, deduce) =>
 const pct = x => `${(x * 100).toLocaleString("es-CO")} %`;
 
 // Las tarifas vigentes del leg, para mostrarlas junto a cada retención (US-11).
-function tarifasDe(leg, concepto, retenido, icaTarifaPorMil) {
+// La de ReteICA la resolvió el motor a partir del retenido de ESE tramo, así que
+// se lee de su resultado y no de un campo de la pantalla.
+function tarifasDe(leg, concepto, retenido) {
   return {
     retefuente: pct(concepto.tarifas[retenido.declarante ? "declarante" : "noDeclarante"]),
-    reteica: `${icaTarifaPorMil.toLocaleString("es-CO")} ‰`,
+    reteica: `${leg.tarifaICA.tarifaPorMil.toLocaleString("es-CO")} ‰`,
     reteiva: `${pct(RETEIVA_TARIFA)} del IVA`,
   };
 }
 
-const RETENCIONES = [["retefuente", "Retefuente"], ["reteica", "ReteICA"], ["reteiva", "ReteIVA"]];
-
-// Una retención con razón no pinta fila (ADR-0004): la razón se enuncia una sola
-// vez por leg, en el panel de notas. El bloqueo es por leg, así que lo normal es
-// que las tres desaparezcan juntas y no quede ninguna.
+// Una retención con razón no pinta fila (ADR-0004): la razón se enuncia en el
+// panel de notas, una línea por retención que no aplica (ADR-0005). Las tres
+// pueden desaparecer juntas, pero cada una por su propio motivo.
 const retencionesQueAplican = leg => RETENCIONES.filter(([id]) => !leg.detalle[id].razon);
 
 // Las líneas de retención de un leg, con su tarifa. Mismo orden siempre.
@@ -212,12 +304,14 @@ function render() {
   $("trapNote").hidden = !concepto.trap;
   if (concepto.trap) $("trapNote").textContent = "⚠ " + concepto.trap;
 
-  const clienteFinal = deriveProfile(readCodes("cf"));
-  const agencia      = deriveProfile(readCodes("ag"));
-  const proveedor    = deriveProfile(readCodes("pr"));
-  renderDerived("cf", clienteFinal);
-  renderDerived("ag", agencia);
-  renderDerived("pr", proveedor);
+  for (const party of ["cf", "ag", "pr"]) declarados[party].actividadICA = leerActividad(party);
+  const clienteFinal = deriveProfile(readCodes("cf"), declarados.cf);
+  const agencia      = deriveProfile(readCodes("ag"), declarados.ag);
+  const proveedor    = deriveProfile(readCodes("pr"), declarados.pr);
+  for (const [party, prof] of [["cf", clienteFinal], ["ag", agencia], ["pr", proveedor]]) {
+    syncDeclarados(party, prof);
+    renderDerived(party, prof);
+  }
 
 
   const contrato = leerMonto("contrato");
@@ -230,14 +324,17 @@ function render() {
     return;
   }
 
-  const municipio = MUNICIPIOS.find(m => m.id === $("muni").value);
+  const municipio = municipioCadena();
   // Tarifa compartida: cada leg decide si la aplica según SU retenido
   // (ver calcularCadena). No se fuerza a 0 según la Agencia — eso le anularía el
   // IVA al leg 2 aunque el Proveedor sí sea responsable.
   const ivaRate = Number($("ivaRate").value);
   const r = calcularCadena({
     contrato, margen: leerMargen(), concepto, municipio,
-    icaTarifaPorMil: Number($("icaTarifa").value) || 0, ivaRate,
+    municipioLeg1: municipioLeg(1), municipioLeg2: municipioLeg(2),
+    tarifaICAManualLeg1: Number($("icaTarifaT1").value) || 0,
+    tarifaICAManualLeg2: Number($("icaTarifaT2").value) || 0,
+    ivaRate,
     clienteFinal, agencia, proveedor,
   });
 
@@ -246,9 +343,8 @@ function render() {
     ? `⚠ ${r.error}`
     : `<b>$ ${fmt(r.ganancia)}</b> para ti · <b>$ ${fmt(r.proveedorSubtotal)}</b> al proveedor`;
 
-  const icaPorMil = Number($("icaTarifa").value) || 0;
-  const tarifas1 = tarifasDe(r.leg1, concepto, agencia, icaPorMil);
-  const tarifas2 = tarifasDe(r.leg2, concepto, proveedor, icaPorMil);
+  const tarifas1 = tarifasDe(r.leg1, concepto, agencia);
+  const tarifas2 = tarifasDe(r.leg2, concepto, proveedor);
 
   flujo.innerHTML =
     (r.error ? `<div class="note">⚠ ${r.error} Corrija el margen: sólo se liquida el tramo 1.</div>` : "") +
@@ -258,8 +354,14 @@ function render() {
 
   // Las notas de los dos legs, etiquetadas para no confundirlas.
   // Sin subcontrato el leg 2 no tiene nada que explicar.
+  // De qué acuerdo salió la tarifa aplicada, para poder rastrearla después. Sólo
+  // donde hubo ReteICA: la procedencia de una tarifa que no se usó no explica nada.
+  const fuenteICA = (etiqueta, leg) =>
+    leg.detalle.reteica.razon ? [] : [[etiqueta, `Tarifa de ReteICA: ${leg.tarifaICA.fuente}.`]];
   const notas = [
+    ...fuenteICA("Tramo 1", r.leg1),
     ...r.leg1.notas.map(n => ["Tramo 1", n]),
+    ...(r.sinProveedor ? [] : fuenteICA("Tramo 2", r.leg2)),
     ...(r.sinProveedor ? [] : r.leg2.notas.map(n => ["Tramo 2", n])),
   ];
   notesEl.innerHTML = notas.map(([t, n]) => `<div class="note"><b>${t}:</b> ${n}</div>`).join("");
@@ -267,13 +369,20 @@ function render() {
   spec.innerHTML = specProveedor(r.leg2, ivaRate, tarifas2, r.sinProveedor);
 }
 
-$("muni").addEventListener("change", () => {
-  $("icaTarifa").value = MUNICIPIOS.find(m => m.id === $("muni").value).tarifaPorMil;
-  render();
-});
+// Cambiar de municipio cambia la tabla de actividades: se repueblan los desplegables.
+["muni", "muniT1", "muniT2"].forEach(id =>
+  $(id).addEventListener("change", () => { llenarActividades(); render(); }));
+// Escribir la actividad reliquida, igual que un chip del RUT.
+$("form").addEventListener("input", e => { if (e.target.matches("[data-actividad]")) render(); });
 
 // Delegación: cualquier chip de código que cambie reliquida la cadena.
 $("form").addEventListener("change", e => { if (e.target.matches("[data-code]")) render(); });
+// Un hecho municipal tocado deja de tomar su valor por defecto: pasa a ser declarado.
+$("form").addEventListener("change", e => {
+  if (!e.target.matches("[data-hecho]")) return;
+  declarados[e.target.dataset.party][e.target.dataset.hecho] = e.target.checked;
+  render();
+});
 // El toggle % / $ fijo intercambia cuál de los dos controles de margen se ve.
 $("margenModo").addEventListener("change", () => {
   const fijo = $("margenModo").value === "fijo";
@@ -293,7 +402,7 @@ $("margenModo").addEventListener("change", () => {
 }));
 
 // Otros inputs simples (tarifas, margen en %, selects).
-["concepto", "ivaRate", "icaTarifa", "margenPct"].forEach(id =>
+["concepto", "ivaRate", "icaTarifaT1", "icaTarifaT2", "margenPct"].forEach(id =>
   $(id).addEventListener($(id).tagName === "SELECT" ? "change" : "input", render));
 
 render();
